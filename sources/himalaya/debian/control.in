@@ -1,0 +1,20 @@
+Source: himalaya
+Section: mail
+Priority: optional
+Maintainer: Krysztal Huang <krysztal.huang@outlook.com>
+Build-Depends:
+ @RUST_PACKAGE_NAME@ (= @RUST_PACKAGE_VERSION@),
+ cmake,
+ debhelper-compat (= 13),
+ gcc,
+ pkgconf,
+Standards-Version: 4.7.2
+Homepage: @SOURCE_GIT@
+Rules-Requires-Root: no
+
+Package: himalaya
+Architecture: any
+Depends: ca-certificates, ${misc:Depends}, ${shlibs:Depends}
+Description: command-line client for managing emails
+ Himalaya is a command-line email client supporting IMAP, Maildir, SMTP, and
+ Sendmail backends, with plain-text and JSON output.

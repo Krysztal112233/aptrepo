@@ -1,0 +1,5 @@
+lazygit (0.63.1-1) UNRELEASED; urgency=medium
+
+  * Build the upstream lazygit release from source.
+
+ -- Krysztal Huang <krysztal.huang@outlook.com>  Thu, 16 Jul 2026 02:08:44 +0800

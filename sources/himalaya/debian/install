@@ -1,0 +1,6 @@
+target/release/himalaya usr/bin
+debian/generated/man/*.1.gz usr/share/man/man1
+debian/generated/himalaya.bash usr/share/bash-completion/completions
+debian/generated/himalaya.fish usr/share/fish/vendor_completions.d
+debian/generated/_himalaya usr/share/zsh/vendor-completions
+assets/himalaya.desktop usr/share/applications

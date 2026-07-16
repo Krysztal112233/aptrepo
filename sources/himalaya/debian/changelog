@@ -1,0 +1,5 @@
+himalaya (1.2.0-1) UNRELEASED; urgency=medium
+
+  * Build the upstream Himalaya release from source.
+
+ -- Krysztal Huang <krysztal.huang@outlook.com>  Thu, 16 Jul 2026 10:36:22 +0800

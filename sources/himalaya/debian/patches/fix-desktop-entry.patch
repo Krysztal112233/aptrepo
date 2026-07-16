@@ -1,0 +1,18 @@
+Description: make the desktop entry conform to the freedesktop specification
+Author: Krysztal Huang <krysztal.huang@outlook.com>
+Forwarded: no
+Last-Update: 2026-07-16
+
+--- a/assets/himalaya.desktop
++++ b/assets/himalaya.desktop
+@@ -4 +3,0 @@
+-DesktopName=Himalaya
+@@ -9,4 +8,4 @@
+-Categories=Application;Network
+-Keywords=email
+-MimeType=x-scheme-handler/mailto;message/rfc822
+-Actions=Compose
++Categories=Network;Email;
++Keywords=email;
++MimeType=x-scheme-handler/mailto;message/rfc822;
++Actions=Compose;

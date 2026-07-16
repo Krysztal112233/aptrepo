@@ -1,0 +1,14 @@
+[package]
+name = "himalaya"
+version = "1.2.0"
+debian_revision = "1"
+
+[source]
+git = "https://github.com/pimalaya/himalaya"
+tag = "v{version}"
+archive = "{git}/archive/refs/tags/{tag}.tar.gz"
+archive_root = "himalaya-{version}"
+sha256 = "3d04afdf6f753219c2203feb8094a2ec82c77bab7f9acbe1811773e2a4562877"
+
+[build]
+toolchain = "rust"

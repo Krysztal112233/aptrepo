@@ -1,0 +1,464 @@
+#!/usr/bin/env -S deno run --allow-env=HOME,XDG_CACHE_HOME --allow-read --allow-write --allow-net --allow-run
+
+import { basename, join } from "node:path";
+import { parse } from "npm:smol-toml@1.7.0";
+
+export const supportedArchitectures = ["amd64", "arm64"] as const;
+export type DebianArchitecture = typeof supportedArchitectures[number];
+export type ToolchainKind = "go" | "rust";
+
+type Table = Record<string, unknown>;
+
+export interface PackageConfig {
+  configPath: string;
+  name: string;
+  version: string;
+  debianRevision: string;
+  baseVersion: string;
+  source: {
+    git: string;
+    tag: string;
+    archive: string;
+    archiveRoot: string;
+    sha256: string;
+  };
+  build: {
+    toolchain: ToolchainKind;
+  };
+}
+
+export interface GoToolchainConfig {
+  configPath: string;
+  fingerprint: string;
+  kind: "go";
+  version: string;
+  debianVersion: string;
+  downloadBase: string;
+  compilerPackage: string;
+  sourcePackage: string;
+  binaryPath: string;
+  sourceSha256: string;
+  architectures: Record<
+    DebianArchitecture,
+    { compilerSha256: string }
+  >;
+}
+
+export interface RustToolchainConfig {
+  configPath: string;
+  fingerprint: string;
+  kind: "rust";
+  version: string;
+  packageName: string;
+  packageRevision: string;
+  packageVersion: string;
+  packageDependencies: string[];
+  downloadBase: string;
+  installPrefix: string;
+  components: string[];
+  architectures: Record<
+    DebianArchitecture,
+    { target: string; sha256: Record<string, string> }
+  >;
+}
+
+export type ToolchainConfig = GoToolchainConfig | RustToolchainConfig;
+
+export async function loadPackageConfig(
+  packageDir: string,
+): Promise<PackageConfig> {
+  const configPath = join(packageDir, "package.toml");
+  const { document } = await loadToml(configPath);
+  const packageTable = readTable(document, "package", configPath);
+  const sourceTable = readTable(document, "source", configPath);
+  const buildTable = readTable(document, "build", configPath);
+
+  const name = readString(packageTable, "name", configPath);
+  if (name !== basename(packageDir)) {
+    throw new Error(
+      `${configPath}: package.name must match directory ${
+        basename(packageDir)
+      }`,
+    );
+  }
+  if (!/^[a-z0-9][a-z0-9+.-]+$/.test(name)) {
+    throw new Error(
+      `${configPath}: invalid Debian package name ${name}`,
+    );
+  }
+
+  const version = readString(packageTable, "version", configPath);
+  const debianRevision = readString(
+    packageTable,
+    "debian_revision",
+    configPath,
+  );
+  const git = readUrl(sourceTable, "git", configPath);
+  const tag = interpolate(
+    readString(sourceTable, "tag", configPath),
+    { version },
+    configPath,
+  );
+  const variables = { git, tag, version };
+  const archive = readResolvedUrl(
+    sourceTable,
+    "archive",
+    variables,
+    configPath,
+  );
+  const archiveRoot = interpolate(
+    readString(sourceTable, "archive_root", configPath),
+    variables,
+    configPath,
+  );
+  const sha256 = readSha256(sourceTable, "sha256", configPath);
+  const toolchain = readToolchainKind(
+    buildTable,
+    "toolchain",
+    configPath,
+  );
+
+  return {
+    configPath,
+    name,
+    version,
+    debianRevision,
+    baseVersion: `${version}-${debianRevision}`,
+    source: { git, tag, archive, archiveRoot, sha256 },
+    build: { toolchain },
+  };
+}
+
+export async function loadToolchainConfig(
+  projectDir: string,
+  kind: ToolchainKind,
+): Promise<ToolchainConfig> {
+  return kind === "go"
+    ? await loadGoToolchainConfig(projectDir)
+    : await loadRustToolchainConfig(projectDir);
+}
+
+export async function loadGoToolchainConfig(
+  projectDir: string,
+): Promise<GoToolchainConfig> {
+  const configPath = join(projectDir, "toolchains/go.toml");
+  const { document, fingerprint } = await loadToml(configPath);
+  expectValue(document, "kind", "go", configPath);
+
+  const architectures = readTable(document, "architectures", configPath);
+  const architectureConfigs = Object.fromEntries(
+    supportedArchitectures.map((architecture) => {
+      const table = readTable(
+        architectures,
+        architecture,
+        configPath,
+      );
+      return [
+        architecture,
+        {
+          compilerSha256: readSha256(
+            table,
+            "compiler_sha256",
+            configPath,
+          ),
+        },
+      ];
+    }),
+  ) as GoToolchainConfig["architectures"];
+
+  return {
+    configPath,
+    fingerprint,
+    kind: "go",
+    version: readString(document, "version", configPath),
+    debianVersion: readString(
+      document,
+      "debian_version",
+      configPath,
+    ),
+    downloadBase: readUrl(document, "download_base", configPath),
+    compilerPackage: readString(
+      document,
+      "compiler_package",
+      configPath,
+    ),
+    sourcePackage: readString(
+      document,
+      "source_package",
+      configPath,
+    ),
+    binaryPath: readAbsolutePath(
+      document,
+      "binary_path",
+      configPath,
+    ),
+    sourceSha256: readSha256(document, "source_sha256", configPath),
+    architectures: architectureConfigs,
+  };
+}
+
+export async function loadRustToolchainConfig(
+  projectDir: string,
+): Promise<RustToolchainConfig> {
+  const configPath = join(projectDir, "toolchains/rust.toml");
+  const { document, fingerprint } = await loadToml(configPath);
+  expectValue(document, "kind", "rust", configPath);
+
+  const version = readString(document, "version", configPath);
+  const packageRevision = readString(
+    document,
+    "package_revision",
+    configPath,
+  );
+  const components = readStringArray(document, "components", configPath);
+  if (new Set(components).size !== components.length) {
+    throw new Error(`${configPath}: components must be unique`);
+  }
+
+  const architectures = readTable(document, "architectures", configPath);
+  const architectureConfigs = Object.fromEntries(
+    supportedArchitectures.map((architecture) => {
+      const table = readTable(
+        architectures,
+        architecture,
+        configPath,
+      );
+      const checksums = readTable(
+        table,
+        "sha256",
+        configPath,
+      );
+      return [
+        architecture,
+        {
+          target: readString(
+            table,
+            "target",
+            configPath,
+          ),
+          sha256: Object.fromEntries(
+            components.map((component) => [
+              component,
+              readSha256(
+                checksums,
+                component,
+                configPath,
+              ),
+            ]),
+          ),
+        },
+      ];
+    }),
+  ) as RustToolchainConfig["architectures"];
+
+  return {
+    configPath,
+    fingerprint,
+    kind: "rust",
+    version,
+    packageName: readString(document, "package_name", configPath),
+    packageRevision,
+    packageVersion: `${version}-${packageRevision}`,
+    packageDependencies: readStringArray(
+      document,
+      "package_dependencies",
+      configPath,
+    ),
+    downloadBase: readUrl(document, "download_base", configPath),
+    installPrefix: readAbsolutePath(
+      document,
+      "install_prefix",
+      configPath,
+    ),
+    components,
+    architectures: architectureConfigs,
+  };
+}
+
+export function parseArchitecture(value: string): DebianArchitecture {
+  if ((supportedArchitectures as readonly string[]).includes(value)) {
+    return value as DebianArchitecture;
+  }
+  throw new Error(`Unsupported architecture: ${value}`);
+}
+
+async function loadToml(
+  configPath: string,
+): Promise<{ document: Table; fingerprint: string }> {
+  const text = await Deno.readTextFile(configPath);
+  let parsed: unknown;
+  try {
+    parsed = parse(text);
+  } catch (error) {
+    throw new Error(`${configPath}: ${errorMessage(error)}`, {
+      cause: error,
+    });
+  }
+  return {
+    document: asTable(parsed, "document", configPath),
+    fingerprint: await sha256Text(text),
+  };
+}
+
+function asTable(value: unknown, field: string, configPath: string): Table {
+  if (
+    typeof value !== "object" || value === null ||
+    Array.isArray(value)
+  ) {
+    throw new Error(`${configPath}: ${field} must be a table`);
+  }
+  return value as Table;
+}
+
+function readTable(table: Table, field: string, configPath: string): Table {
+  return asTable(table[field], field, configPath);
+}
+
+function readString(table: Table, field: string, configPath: string): string {
+  const value = table[field];
+  if (typeof value !== "string" || value.length === 0) {
+    throw new Error(
+      `${configPath}: ${field} must be a non-empty string`,
+    );
+  }
+  return value;
+}
+
+function readStringArray(
+  table: Table,
+  field: string,
+  configPath: string,
+): string[] {
+  const value = table[field];
+  if (
+    !Array.isArray(value) || value.length === 0 ||
+    value.some((item) => typeof item !== "string" || item.length === 0)
+  ) {
+    throw new Error(
+      `${configPath}: ${field} must be non-empty strings`,
+    );
+  }
+  return value as string[];
+}
+
+function readUrl(table: Table, field: string, configPath: string): string {
+  const value = readString(table, field, configPath);
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:") {
+      throw new Error("HTTPS is required");
+    }
+  } catch (error) {
+    throw new Error(
+      `${configPath}: invalid ${field}: ${errorMessage(error)}`,
+    );
+  }
+  return value.replace(/\/$/, "");
+}
+
+function readResolvedUrl(
+  table: Table,
+  field: string,
+  variables: Record<string, string>,
+  configPath: string,
+): string {
+  const resolved = interpolate(
+    readString(table, field, configPath),
+    variables,
+    configPath,
+  );
+  try {
+    const url = new URL(resolved);
+    if (url.protocol !== "https:") {
+      throw new Error("HTTPS is required");
+    }
+  } catch (error) {
+    throw new Error(
+      `${configPath}: invalid ${field}: ${errorMessage(error)}`,
+    );
+  }
+  return resolved;
+}
+
+function readAbsolutePath(
+  table: Table,
+  field: string,
+  configPath: string,
+): string {
+  const value = readString(table, field, configPath);
+  if (!value.startsWith("/")) {
+    throw new Error(
+      `${configPath}: ${field} must be an absolute path`,
+    );
+  }
+  return value.replace(/\/$/, "");
+}
+
+function readSha256(table: Table, field: string, configPath: string): string {
+  const value = readString(table, field, configPath).toLowerCase();
+  if (!/^[0-9a-f]{64}$/.test(value)) {
+    throw new Error(
+      `${configPath}: ${field} must be a SHA-256 digest`,
+    );
+  }
+  return value;
+}
+
+function readToolchainKind(
+  table: Table,
+  field: string,
+  configPath: string,
+): ToolchainKind {
+  const value = readString(table, field, configPath);
+  if (value !== "go" && value !== "rust") {
+    throw new Error(
+      `${configPath}: unsupported toolchain ${value}`,
+    );
+  }
+  return value;
+}
+
+function expectValue(
+  table: Table,
+  field: string,
+  expected: string,
+  configPath: string,
+): void {
+  const value = readString(table, field, configPath);
+  if (value !== expected) {
+    throw new Error(`${configPath}: ${field} must be ${expected}`);
+  }
+}
+
+function interpolate(
+  template: string,
+  variables: Record<string, string>,
+  configPath: string,
+): string {
+  let result = template;
+  for (const [name, value] of Object.entries(variables)) {
+    result = result.replaceAll(`{${name}}`, value);
+  }
+  const unresolved = result.match(/\{[^{}]+\}/)?.[0];
+  if (unresolved) {
+    throw new Error(
+      `${configPath}: unresolved template variable ${unresolved}`,
+    );
+  }
+  return result;
+}
+
+async function sha256Text(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(value),
+  );
+  return Array.from(
+    new Uint8Array(digest),
+    (byte) => byte.toString(16).padStart(2, "0"),
+  ).join("");
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}

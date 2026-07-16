@@ -1,0 +1,18 @@
+Source: lazygit
+Section: vcs
+Priority: optional
+Maintainer: Krysztal Huang <krysztal.huang@outlook.com>
+Build-Depends:
+ @GO_COMPILER_PACKAGE@ (>= @GO_DEBIAN_VERSION@),
+ debhelper-compat (= 13),
+ git,
+Standards-Version: 4.7.2
+Homepage: @SOURCE_GIT@
+Rules-Requires-Root: no
+
+Package: lazygit
+Architecture: any
+Depends: git, ${misc:Depends}
+Description: simple terminal UI for Git commands
+ Lazygit is a terminal user interface that makes common Git operations easier
+ to perform and understand.
