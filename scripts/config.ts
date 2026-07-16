@@ -5,9 +5,20 @@ import { parse } from "npm:smol-toml@1.7.0";
 
 export const supportedArchitectures = ["amd64", "arm64"] as const;
 export type DebianArchitecture = typeof supportedArchitectures[number];
+export const supportedSuites = ["bookworm", "trixie", "forky"] as const;
+export type DebianSuite = typeof supportedSuites[number];
 export type ToolchainKind = "go" | "rust";
 
 type Table = Record<string, unknown>;
+
+export interface RepositoryConfig {
+  configPath: string;
+  origin: string;
+  label: string;
+  components: string[];
+  suites: DebianSuite[];
+  architectures: DebianArchitecture[];
+}
 
 export interface PackageConfig {
   configPath: string;
@@ -63,6 +74,44 @@ export interface RustToolchainConfig {
 }
 
 export type ToolchainConfig = GoToolchainConfig | RustToolchainConfig;
+
+export async function loadRepositoryConfig(
+  projectDir: string,
+): Promise<RepositoryConfig> {
+  const configPath = join(projectDir, "repository.toml");
+  const { document } = await loadToml(configPath);
+  const components = readUniqueStringArray(
+    document,
+    "components",
+    configPath,
+  );
+  for (const component of components) {
+    if (!/^[a-z0-9][a-z0-9+.-]*$/.test(component)) {
+      throw new Error(
+        `${configPath}: invalid repository component ${component}`,
+      );
+    }
+  }
+
+  return {
+    configPath,
+    origin: readSingleLineString(document, "origin", configPath),
+    label: readSingleLineString(document, "label", configPath),
+    components,
+    suites: readSupportedStringArray(
+      document,
+      "suites",
+      supportedSuites,
+      configPath,
+    ),
+    architectures: readSupportedStringArray(
+      document,
+      "architectures",
+      supportedArchitectures,
+      configPath,
+    ),
+  };
+}
 
 export async function loadPackageConfig(
   packageDir: string,
@@ -339,6 +388,47 @@ function readStringArray(
     );
   }
   return value as string[];
+}
+
+function readUniqueStringArray(
+  table: Table,
+  field: string,
+  configPath: string,
+): string[] {
+  const values = readStringArray(table, field, configPath);
+  if (new Set(values).size !== values.length) {
+    throw new Error(`${configPath}: ${field} must be unique`);
+  }
+  return values;
+}
+
+function readSupportedStringArray<const Value extends string>(
+  table: Table,
+  field: string,
+  supported: readonly Value[],
+  configPath: string,
+): Value[] {
+  const values = readUniqueStringArray(table, field, configPath);
+  for (const value of values) {
+    if (!(supported as readonly string[]).includes(value)) {
+      throw new Error(`${configPath}: unsupported ${field} value ${value}`);
+    }
+  }
+  return values as Value[];
+}
+
+function readSingleLineString(
+  table: Table,
+  field: string,
+  configPath: string,
+): string {
+  const value = readString(table, field, configPath);
+  if (value.trim() !== value || /[\r\n]/.test(value)) {
+    throw new Error(
+      `${configPath}: ${field} must be a single trimmed line`,
+    );
+  }
+  return value;
 }
 
 function readUrl(table: Table, field: string, configPath: string): string {

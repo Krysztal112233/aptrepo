@@ -1,0 +1,6 @@
+origin = "Krysztal"
+label = "Krysztal's Debian Repository"
+
+components = ["main"]
+suites = ["bookworm", "trixie", "forky"]
+architectures = ["amd64"]

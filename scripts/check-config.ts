@@ -2,12 +2,24 @@
 
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { loadPackageConfig, loadToolchainConfig } from "./config.ts";
+import {
+  loadPackageConfig,
+  loadRepositoryConfig,
+  loadToolchainConfig,
+} from "./config.ts";
 import { exists } from "./runtime.ts";
 
 const projectDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const packagesDir = join(projectDir, "packages");
 const packageDirs: string[] = [];
+const repositoryConfig = await loadRepositoryConfig(projectDir);
+
+console.log(
+  `${repositoryConfig.label}: origin=${repositoryConfig.origin}, ` +
+    `components=${repositoryConfig.components.join(",")}, ` +
+    `suites=${repositoryConfig.suites.join(",")}, ` +
+    `architectures=${repositoryConfig.architectures.join(",")}`,
+);
 
 for await (const entry of Deno.readDir(packagesDir)) {
   if (!entry.isDirectory) continue;
