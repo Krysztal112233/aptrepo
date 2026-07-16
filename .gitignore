@@ -1,2 +1,3 @@
 /build/
-/repo/
+/repo/*
+!/repo/krysztal-archive-keyring.pgp
