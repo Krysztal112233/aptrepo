@@ -1,0 +1,15 @@
+[package]
+name = "example-go"
+version = "1.0.0"
+debian_revision = "1"
+
+[source]
+git = "https://github.com/example/example-go"
+tag = "v{version}"
+archive = "{git}/archive/refs/tags/{tag}.tar.gz"
+archive_root = "example-go-{version}"
+# Replace this placeholder with the SHA-256 digest of the source archive.
+sha256 = "0000000000000000000000000000000000000000000000000000000000000000"
+
+[build]
+toolchain = "go"

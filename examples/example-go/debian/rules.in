@@ -1,0 +1,21 @@
+#!/usr/bin/make -f
+
+export PATH := @GO_BINARY_PATH@:$(PATH)
+export CGO_ENABLED := 0
+export GOCACHE := $(CURDIR)/debian/.cache/go-build
+export GOFLAGS := -mod=vendor -trimpath
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	go build -ldflags='-s -w' -o example-go .
+
+override_dh_auto_test:
+	go test ./...
+
+override_dh_auto_install:
+	install -D -m 0755 example-go debian/example-go/usr/bin/example-go
+
+override_dh_auto_clean:
+	rm -rf example-go debian/.cache

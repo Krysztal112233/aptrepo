@@ -1,0 +1,15 @@
+[package]
+name = "example-rust"
+version = "1.0.0"
+debian_revision = "1"
+
+[source]
+git = "https://github.com/example/example-rust"
+tag = "v{version}"
+archive = "{git}/archive/refs/tags/{tag}.tar.gz"
+archive_root = "example-rust-{version}"
+# Replace this placeholder with the SHA-256 digest of the source archive.
+sha256 = "0000000000000000000000000000000000000000000000000000000000000000"
+
+[build]
+toolchain = "rust"

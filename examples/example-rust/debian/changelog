@@ -1,0 +1,5 @@
+example-rust (1.0.0-1) UNRELEASED; urgency=medium
+
+  * Initial Debian packaging.
+
+ -- Example Maintainer <maintainer@example.com>  Thu, 16 Jul 2026 17:30:00 +0800

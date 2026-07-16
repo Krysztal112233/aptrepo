@@ -1,0 +1,17 @@
+Source: example-go
+Section: devel
+Priority: optional
+Maintainer: Example Maintainer <maintainer@example.com>
+Build-Depends:
+ @GO_COMPILER_PACKAGE@ (>= @GO_DEBIAN_VERSION@),
+ debhelper-compat (= 13),
+Standards-Version: 4.7.2
+Homepage: @SOURCE_GIT@
+Rules-Requires-Root: no
+
+Package: example-go
+Architecture: any
+Depends: ${misc:Depends}
+Description: example command-line program written in Go
+ This package demonstrates how to build a vendored Go project with the pinned
+ compiler toolchain provided by this repository.
