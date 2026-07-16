@@ -6,12 +6,12 @@ import { loadPackageConfig, loadToolchainConfig } from "./config.ts";
 import { exists } from "./runtime.ts";
 
 const projectDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const sourcesDir = join(projectDir, "sources");
+const packagesDir = join(projectDir, "packages");
 const packageDirs: string[] = [];
 
-for await (const entry of Deno.readDir(sourcesDir)) {
+for await (const entry of Deno.readDir(packagesDir)) {
   if (!entry.isDirectory) continue;
-  const packageDir = join(sourcesDir, entry.name);
+  const packageDir = join(packagesDir, entry.name);
   if (await exists(join(packageDir, "package.toml"))) {
     packageDirs.push(packageDir);
   }

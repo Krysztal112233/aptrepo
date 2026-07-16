@@ -1,4 +1,8 @@
-# Build Environment Setup
+# Krysztal's Debian Repository
+
+A self-hosted APT repository for building and publishing Krysztal's Debian packages.
+
+## Build Environment Setup
 
 The build environment is intended to run on a Debian host using either the
 `amd64` or `arm64` architecture. It requires Deno 2, Just, `curl`, `sbuild`,

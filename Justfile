@@ -23,7 +23,7 @@ setup-sbuild-all:
     just setup-sbuild forky
 
 build-lazygit suite="trixie": setup-go
-    ./sources/lazygit/build.ts "{{ suite }}"
+    ./packages/lazygit/build.ts "{{ suite }}"
 
 build-lazygit-all:
     just build-lazygit bookworm
@@ -31,7 +31,7 @@ build-lazygit-all:
     just build-lazygit forky
 
 build-himalaya suite="trixie": setup-rust
-    ./sources/himalaya/build.ts "{{ suite }}"
+    ./packages/himalaya/build.ts "{{ suite }}"
 
 build-himalaya-all:
     just build-himalaya bookworm
