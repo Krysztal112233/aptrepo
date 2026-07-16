@@ -43,15 +43,15 @@ export interface GoToolchainConfig {
   fingerprint: string;
   kind: "go";
   version: string;
-  debianVersion: string;
+  packageName: string;
+  packageRevision: string;
+  packageVersion: string;
+  packageDependencies: string[];
   downloadBase: string;
-  compilerPackage: string;
-  sourcePackage: string;
-  binaryPath: string;
-  sourceSha256: string;
+  installPrefix: string;
   architectures: Record<
     DebianArchitecture,
-    { compilerSha256: string }
+    { target: string; sha256: string }
   >;
 }
 
@@ -194,6 +194,13 @@ export async function loadGoToolchainConfig(
   const { document, fingerprint } = await loadToml(configPath);
   expectValue(document, "kind", "go", configPath);
 
+  const version = readString(document, "version", configPath);
+  const packageRevision = readString(
+    document,
+    "package_revision",
+    configPath,
+  );
+
   const architectures = readTable(document, "architectures", configPath);
   const architectureConfigs = Object.fromEntries(
     supportedArchitectures.map((architecture) => {
@@ -205,9 +212,14 @@ export async function loadGoToolchainConfig(
       return [
         architecture,
         {
-          compilerSha256: readSha256(
+          target: readString(
             table,
-            "compiler_sha256",
+            "target",
+            configPath,
+          ),
+          sha256: readSha256(
+            table,
+            "sha256",
             configPath,
           ),
         },
@@ -219,29 +231,21 @@ export async function loadGoToolchainConfig(
     configPath,
     fingerprint,
     kind: "go",
-    version: readString(document, "version", configPath),
-    debianVersion: readString(
+    version,
+    packageName: readString(document, "package_name", configPath),
+    packageRevision,
+    packageVersion: `${version}-${packageRevision}`,
+    packageDependencies: readStringArray(
       document,
-      "debian_version",
+      "package_dependencies",
       configPath,
     ),
     downloadBase: readUrl(document, "download_base", configPath),
-    compilerPackage: readString(
+    installPrefix: readAbsolutePath(
       document,
-      "compiler_package",
+      "install_prefix",
       configPath,
     ),
-    sourcePackage: readString(
-      document,
-      "source_package",
-      configPath,
-    ),
-    binaryPath: readAbsolutePath(
-      document,
-      "binary_path",
-      configPath,
-    ),
-    sourceSha256: readSha256(document, "source_sha256", configPath),
     architectures: architectureConfigs,
   };
 }

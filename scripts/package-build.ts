@@ -20,7 +20,7 @@ import {
   requiredEnv,
   run,
 } from "./runtime.ts";
-import { goDebPaths, installedRustRoot, rustDebPath } from "./toolchains.ts";
+import { goDebPath, installedRustRoot, rustDebPath } from "./toolchains.ts";
 
 const versionSuffixes = new Map([
   ["bookworm", "deb12u1"],
@@ -206,24 +206,26 @@ async function createGoAdapter(
   environment: BuildEnvironment,
 ): Promise<BuildAdapter> {
   const config = await loadGoToolchainConfig(environment.projectDir);
-  const packages = goDebPaths(
+  const goToolchain = goDebPath(
     environment.projectDir,
     environment.architecture,
     config,
   );
-  if (!(await exists(packages[0])) || !(await exists(packages[1]))) {
+  if (!(await exists(goToolchain))) {
     throw new Error(
       "Missing Go build toolchain\nRun: just setup-go",
     );
   }
 
   return {
-    extraPackages: packages,
+    extraPackages: [goToolchain],
     controlReplacements: {
-      GO_COMPILER_PACKAGE: config.compilerPackage,
-      GO_DEBIAN_VERSION: config.debianVersion,
+      GO_PACKAGE_NAME: config.packageName,
+      GO_PACKAGE_VERSION: config.packageVersion,
     },
-    rulesReplacements: { GO_BINARY_PATH: config.binaryPath },
+    rulesReplacements: {
+      GO_BINARY_PATH: join(config.installPrefix, "bin"),
+    },
     async prepareSource({ download, workDir }) {
       await run("tar", ["-xzf", download, "-C", workDir]);
       return download;

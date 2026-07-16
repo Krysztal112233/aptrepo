@@ -3,7 +3,7 @@ Section: vcs
 Priority: optional
 Maintainer: Krysztal Huang <krysztal.huang@outlook.com>
 Build-Depends:
- @GO_COMPILER_PACKAGE@ (>= @GO_DEBIAN_VERSION@),
+ @GO_PACKAGE_NAME@ (>= @GO_PACKAGE_VERSION@),
  debhelper-compat (= 13),
  git,
 Standards-Version: 4.7.2

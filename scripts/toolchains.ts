@@ -7,22 +7,16 @@ import type {
   RustToolchainConfig,
 } from "./config.ts";
 
-export function goDebPaths(
+export function goDebPath(
   projectDir: string,
   architecture: DebianArchitecture,
   config: GoToolchainConfig,
-): [string, string] {
-  const directory = join(projectDir, "build/toolchains");
-  return [
-    join(
-      directory,
-      `${config.compilerPackage}_${config.debianVersion}_${architecture}.deb`,
-    ),
-    join(
-      directory,
-      `${config.sourcePackage}_${config.debianVersion}_all.deb`,
-    ),
-  ];
+): string {
+  return join(
+    projectDir,
+    "build/toolchains",
+    `${config.packageName}_${config.packageVersion}_${architecture}.deb`,
+  );
 }
 
 export function rustDebPath(

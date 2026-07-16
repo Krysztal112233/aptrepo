@@ -1,14 +1,15 @@
 kind = "go"
 version = "1.25.12"
-debian_version = "1.25.12-1~bpo13+1"
-download_base = "https://deb.debian.org/debian/pool/main/g/golang-1.25"
-compiler_package = "golang-1.25-go"
-source_package = "golang-1.25-src"
-binary_path = "/usr/lib/go-1.25/bin"
-source_sha256 = "5e1da616cf21663e27bfdd44267185d9ce9ff0565f65f78c63b029515f2b67e1"
+package_name = "aptrepo-go"
+package_revision = "1"
+package_dependencies = ["libc6"]
+download_base = "https://go.dev/dl"
+install_prefix = "/opt/aptrepo/go"
 
 [architectures.amd64]
-compiler_sha256 = "c4fe1056a483db760344e7f827e0ab9e5d1ee9324a009d7a2175b9ed173b2f26"
+target = "linux-amd64"
+sha256 = "234828b7a89e0e303d2556310ee549fbcf253d28de937bac3da13d6294262ac1"
 
 [architectures.arm64]
-compiler_sha256 = "c2f9a2f8ab51bb5bd9397b01a99059aa9e8deb0337527cd3536660c786dddf28"
+target = "linux-arm64"
+sha256 = "8b5884aef89600aef5b0b051fb971f11f49bb996521e911f30f02a66884f7bd2"
