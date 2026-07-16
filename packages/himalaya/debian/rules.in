@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 
-export PATH := @RUST_INSTALL_PREFIX@/bin:$(PATH)
+export PATH := {{RUST_INSTALL_PREFIX}}/bin:$(PATH)
 export CARGO_HOME := $(CURDIR)/debian/.cargo-home
 export CARGO_NET_OFFLINE := true
 export CARGO_TARGET_DIR := $(CURDIR)/target

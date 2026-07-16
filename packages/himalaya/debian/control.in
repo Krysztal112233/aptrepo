@@ -3,13 +3,13 @@ Section: mail
 Priority: optional
 Maintainer: Krysztal Huang <krysztal.huang@outlook.com>
 Build-Depends:
- @RUST_PACKAGE_NAME@ (= @RUST_PACKAGE_VERSION@),
+ {{RUST_PACKAGE_NAME}} (= {{RUST_PACKAGE_VERSION}}),
  cmake,
  debhelper-compat (= 13),
  gcc,
  pkgconf,
 Standards-Version: 4.7.2
-Homepage: @SOURCE_GIT@
+Homepage: {{SOURCE_GIT}}
 Rules-Requires-Root: no
 
 Package: himalaya

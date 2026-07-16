@@ -1,6 +1,10 @@
 #!/usr/bin/env -S deno run --allow-env=HOME,XDG_CACHE_HOME --allow-read --allow-write --allow-net --allow-run
 
 import { join } from "node:path";
+// @ts-types="npm:@types/mustache@4"
+import Mustache from "npm:mustache@4";
+
+Mustache.escape = (text: string): string => text;
 
 const decoder = new TextDecoder();
 
@@ -75,11 +79,11 @@ export async function renderDebianTemplate(
 ): Promise<void> {
   const templatePath = join(debianDir, `${name}.in`);
   const destination = join(debianDir, name);
-  let content = await Deno.readTextFile(templatePath);
-  for (const [key, value] of Object.entries(replacements)) {
-    content = content.replaceAll(`@${key}@`, value);
-  }
-  const unresolved = content.match(/@[A-Z][A-Z0-9_]*@/)?.[0];
+  const content = Mustache.render(
+    await Deno.readTextFile(templatePath),
+    replacements,
+  );
+  const unresolved = content.match(/\{\{[^{}]*\}\}/)?.[0];
   if (unresolved) {
     throw new Error(
       `${templatePath}: unresolved template value ${unresolved}`,

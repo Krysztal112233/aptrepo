@@ -3,11 +3,11 @@ Section: vcs
 Priority: optional
 Maintainer: Krysztal Huang <krysztal.huang@outlook.com>
 Build-Depends:
- @GO_PACKAGE_NAME@ (>= @GO_PACKAGE_VERSION@),
+ {{GO_PACKAGE_NAME}} (>= {{GO_PACKAGE_VERSION}}),
  debhelper-compat (= 13),
  git,
 Standards-Version: 4.7.2
-Homepage: @SOURCE_GIT@
+Homepage: {{SOURCE_GIT}}
 Rules-Requires-Root: no
 
 Package: lazygit

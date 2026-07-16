@@ -2,7 +2,7 @@
 
 include /usr/share/dpkg/pkg-info.mk
 
-export PATH := @GO_BINARY_PATH@:$(PATH)
+export PATH := {{GO_BINARY_PATH}}:$(PATH)
 export CGO_ENABLED := 0
 export GOCACHE := $(CURDIR)/debian/.cache/go-build
 export GOFLAGS := -mod=vendor -trimpath
