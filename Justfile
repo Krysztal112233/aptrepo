@@ -1,6 +1,9 @@
 check-config:
     ./scripts/check-config.ts
 
+check-required:
+    ./scripts/check-required
+
 fmt:
     deno fmt **/**.ts
 

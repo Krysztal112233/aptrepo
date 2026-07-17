@@ -1,0 +1,32 @@
+#!/bin/sh
+
+missing=0
+for cmd in \
+	deno \
+	curl \
+	sha256sum \
+	tar \
+	zstd \
+	dpkg \
+	dpkg-deb \
+	dpkg-buildpackage \
+	unshare \
+	newuidmap \
+	mmdebstrap \
+	sbuild \
+	reprepro \
+	gpg; do
+	if command -v "$cmd" >/dev/null 2>&1; then
+		printf '  ok %s\n' "$cmd"
+	else
+		printf 'MISSING %s\n' "$cmd"
+		missing=1
+	fi
+done
+
+if [ "$missing" -ne 0 ]; then
+	echo "Some required commands are missing." >&2
+	exit 1
+fi
+
+echo "All required commands are installed."

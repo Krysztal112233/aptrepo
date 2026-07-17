@@ -2,7 +2,12 @@
 
 The build environment is intended to run on a Debian host using either the
 `amd64` or `arm64` architecture. It requires Deno 2, Just, `curl`, `sbuild`,
-`mmdebstrap`, `uidmap`, and the standard Debian packaging tools.
+`mmdebstrap`, `uidmap`, and the standard Debian packaging tools. To check that
+every required command is installed, run:
+
+```sh
+just check-required
+```
 
 From the repository root, validate the configuration first:
 
