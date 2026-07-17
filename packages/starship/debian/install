@@ -1,0 +1,4 @@
+target/release/starship usr/bin
+debian/generated/starship.bash usr/share/bash-completion/completions
+debian/generated/starship.fish usr/share/fish/vendor_completions.d
+debian/generated/_starship usr/share/zsh/vendor-completions

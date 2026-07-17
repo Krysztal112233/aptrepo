@@ -1,0 +1,5 @@
+starship (1.26.0-1) UNRELEASED; urgency=medium
+
+  * Build the upstream Starship release from source.
+
+ -- Krysztal Huang <krysztal.huang@outlook.com>  Fri, 17 Jul 2026 10:55:41 +0800

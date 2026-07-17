@@ -1,0 +1,20 @@
+Source: starship
+Section: utils
+Priority: optional
+Maintainer: Krysztal Huang <krysztal.huang@outlook.com>
+Build-Depends:
+ {{RUST_PACKAGE_NAME}} (= {{RUST_PACKAGE_VERSION}}),
+ debhelper-compat (= 13),
+ pkgconf,
+ zlib1g-dev,
+Standards-Version: 4.7.2
+Homepage: {{SOURCE_GIT}}
+Rules-Requires-Root: no
+
+Package: starship
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: minimal, blazing-fast, infinitely customizable prompt for any shell
+ Starship is a cross-shell prompt written in Rust. It shows relevant
+ information for the current directory, such as the Git branch and status,
+ package versions, and runtime toolchains, while staying fast and configurable.

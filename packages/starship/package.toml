@@ -1,0 +1,14 @@
+[package]
+name = "starship"
+version = "1.26.0"
+debian_revision = "1"
+
+[source]
+git = "https://github.com/starship/starship"
+tag = "v{version}"
+archive = "{git}/archive/refs/tags/{tag}.tar.gz"
+archive_root = "starship-{version}"
+sha256 = "8c95e8a6c596b29ac192104eae00dd991e8c8fd66083fd2b34d6b223a5803a59"
+
+[build]
+toolchain = "rust"

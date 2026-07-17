@@ -41,9 +41,18 @@ build-himalaya-all:
     just build-himalaya trixie
     just build-himalaya forky
 
+build-starship suite="trixie": setup-rust
+    ./packages/starship/build.ts "{{ suite }}"
+
+build-starship-all:
+    just build-starship bookworm
+    just build-starship trixie
+    just build-starship forky
+
 build-all:
     @just build-lazygit-all
     @just build-himalaya-all
+    @just build-starship-all
 
 repo:
     ./scripts/repo-build.ts
