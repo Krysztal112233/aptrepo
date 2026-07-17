@@ -1,0 +1,4 @@
+target/release/zellij usr/bin
+debian/generated/zellij.bash usr/share/bash-completion/completions
+debian/generated/zellij.fish usr/share/fish/vendor_completions.d
+debian/generated/_zellij usr/share/zsh/vendor-completions

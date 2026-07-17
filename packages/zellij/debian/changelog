@@ -1,0 +1,5 @@
+zellij (0.44.3-1) UNRELEASED; urgency=medium
+
+  * Build the upstream Zellij release from source.
+
+ -- Krysztal Huang <krysztal.huang@outlook.com>  Fri, 17 Jul 2026 22:09:28 +0800

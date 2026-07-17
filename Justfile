@@ -49,10 +49,19 @@ build-starship-all:
     just build-starship trixie
     just build-starship forky
 
+build-zellij suite="trixie": setup-rust
+    ./packages/zellij/build.ts "{{ suite }}"
+
+build-zellij-all:
+    just build-zellij bookworm
+    just build-zellij trixie
+    just build-zellij forky
+
 build-all:
     @just build-lazygit-all
     @just build-himalaya-all
     @just build-starship-all
+    @just build-zellij-all
 
 repo:
     ./scripts/repo-build.ts

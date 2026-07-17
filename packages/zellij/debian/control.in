@@ -1,0 +1,18 @@
+Source: zellij
+Section: utils
+Priority: optional
+Maintainer: Krysztal Huang <krysztal.huang@outlook.com>
+Build-Depends:
+ {{RUST_PACKAGE_NAME}} (= {{RUST_PACKAGE_VERSION}}),
+ debhelper-compat (= 13),
+Standards-Version: 4.7.2
+Homepage: {{SOURCE_GIT}}
+Rules-Requires-Root: no
+
+Package: zellij
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: terminal workspace with batteries included
+ Zellij is a terminal multiplexer written in Rust. It provides a layout
+ system, built-in WASM plugins (status bar, tab bar, file manager), session
+ resurrection, and web client support, all usable without configuration.
