@@ -71,6 +71,19 @@ export async function downloadVerified(
   }
 }
 
+export function renderTemplate(
+  template: string,
+  replacements: Record<string, unknown>,
+  description: string,
+): string {
+  const content = Mustache.render(template, replacements);
+  const unresolved = content.match(/\{\{[^{}]*\}\}/)?.[0];
+  if (unresolved) {
+    throw new Error(`${description}: unresolved template value ${unresolved}`);
+  }
+  return content;
+}
+
 export async function renderDebianTemplate(
   debianDir: string,
   name: string,
@@ -79,16 +92,11 @@ export async function renderDebianTemplate(
 ): Promise<void> {
   const templatePath = join(debianDir, `${name}.in`);
   const destination = join(debianDir, name);
-  const content = Mustache.render(
+  const content = renderTemplate(
     await Deno.readTextFile(templatePath),
     replacements,
+    templatePath,
   );
-  const unresolved = content.match(/\{\{[^{}]*\}\}/)?.[0];
-  if (unresolved) {
-    throw new Error(
-      `${templatePath}: unresolved template value ${unresolved}`,
-    );
-  }
   await Deno.writeTextFile(destination, content);
   if (executable) await Deno.chmod(destination, 0o755);
   await Deno.remove(templatePath);

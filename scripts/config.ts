@@ -15,6 +15,7 @@ export interface RepositoryConfig {
   configPath: string;
   origin: string;
   label: string;
+  signingKey: string;
   components: string[];
   suites: DebianSuite[];
   architectures: DebianArchitecture[];
@@ -97,6 +98,7 @@ export async function loadRepositoryConfig(
     configPath,
     origin: readSingleLineString(document, "origin", configPath),
     label: readSingleLineString(document, "label", configPath),
+    signingKey: readSigningKey(document, "signing_key", configPath),
     components,
     suites: readSupportedStringArray(
       document,
@@ -493,6 +495,20 @@ function readSha256(table: Table, field: string, configPath: string): string {
   if (!/^[0-9a-f]{64}$/.test(value)) {
     throw new Error(
       `${configPath}: ${field} must be a SHA-256 digest`,
+    );
+  }
+  return value;
+}
+
+function readSigningKey(
+  table: Table,
+  field: string,
+  configPath: string,
+): string {
+  const value = readString(table, field, configPath).toUpperCase();
+  if (!/^([0-9A-F]{16}|[0-9A-F]{40})$/.test(value)) {
+    throw new Error(
+      `${configPath}: ${field} must be a key ID or fingerprint`,
     );
   }
   return value;

@@ -16,6 +16,7 @@ const repositoryConfig = await loadRepositoryConfig(projectDir);
 
 console.log(
   `${repositoryConfig.label}: origin=${repositoryConfig.origin}, ` +
+    `signing_key=${repositoryConfig.signingKey}, ` +
     `components=${repositoryConfig.components.join(",")}, ` +
     `suites=${repositoryConfig.suites.join(",")}, ` +
     `architectures=${repositoryConfig.architectures.join(",")}`,

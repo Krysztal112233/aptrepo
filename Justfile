@@ -41,3 +41,6 @@ build-himalaya-all:
 build-all:
     @just build-lazygit-all
     @just build-himalaya-all
+
+repo:
+    ./scripts/repo-build.ts
