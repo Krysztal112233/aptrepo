@@ -1,0 +1,25 @@
+#!/usr/bin/make -f
+
+export PATH := {{RUST_INSTALL_PREFIX}}/bin:$(PATH)
+export CARGO_HOME := $(CURDIR)/debian/.cargo-home
+export CARGO_NET_OFFLINE := true
+export CARGO_TARGET_DIR := $(CURDIR)/target
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	cargo build --release --locked --offline
+	mkdir -p debian/generated
+	./target/release/mdbook completions bash > debian/generated/mdbook.bash
+	./target/release/mdbook completions fish > debian/generated/mdbook.fish
+	./target/release/mdbook completions zsh > debian/generated/_mdbook
+
+override_dh_auto_clean:
+	rm -rf target debian/.cargo-home debian/generated
+
+override_dh_strip:
+	dh_strip --no-automatic-dbgsym
+
+override_dh_clean:
+	dh_clean -Xvendor/

@@ -1,0 +1,19 @@
+Source: mdbook
+Section: text
+Priority: optional
+Maintainer: Krysztal Huang <krysztal.huang@outlook.com>
+Build-Depends:
+ {{RUST_PACKAGE_NAME}} (= {{RUST_PACKAGE_VERSION}}),
+ debhelper-compat (= 13),
+Standards-Version: 4.7.2
+Homepage: {{SOURCE_GIT}}
+Rules-Requires-Root: no
+
+Package: mdbook
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: command line tool to create books with Markdown
+ mdBook is a command line tool and Rust crate to create books using
+ Markdown (as by the CommonMark specification) files. It is similar to
+ Gitbook but written in Rust, producing a static HTML site with search,
+ syntax highlighting, and live-reload serving for local preview.

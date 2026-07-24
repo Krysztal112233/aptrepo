@@ -1,0 +1,14 @@
+[package]
+name = "mdbook"
+version = "0.5.4"
+debian_revision = "1"
+
+[source]
+git = "https://github.com/rust-lang/mdBook"
+tag = "v{version}"
+archive = "{git}/archive/refs/tags/{tag}.tar.gz"
+archive_root = "mdBook-{version}"
+sha256 = "107614330c35c77d53b6f6ce7826c50eed087650efe5646a4d0a16ca6bf5544b"
+
+[build]
+toolchain = "rust"

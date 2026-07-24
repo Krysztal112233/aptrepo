@@ -57,11 +57,20 @@ build-zellij-all:
     just build-zellij trixie
     just build-zellij forky
 
+build-mdbook suite="trixie": setup-rust
+    ./packages/mdbook/build.ts "{{ suite }}"
+
+build-mdbook-all:
+    just build-mdbook bookworm
+    just build-mdbook trixie
+    just build-mdbook forky
+
 build-all:
     @just build-lazygit-all
     @just build-himalaya-all
     @just build-starship-all
     @just build-zellij-all
+    @just build-mdbook-all
 
 repo:
     ./scripts/repo-build.ts

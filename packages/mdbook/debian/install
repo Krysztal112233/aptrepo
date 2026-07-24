@@ -1,0 +1,4 @@
+target/release/mdbook usr/bin
+debian/generated/mdbook.bash usr/share/bash-completion/completions
+debian/generated/mdbook.fish usr/share/fish/vendor_completions.d
+debian/generated/_mdbook usr/share/zsh/vendor-completions

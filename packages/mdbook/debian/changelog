@@ -1,0 +1,5 @@
+mdbook (0.5.4-1) UNRELEASED; urgency=medium
+
+  * Build the upstream mdBook release from source.
+
+ -- Krysztal Huang <krysztal.huang@outlook.com>  Fri, 24 Jul 2026 16:53:00 +0800
