@@ -72,11 +72,11 @@ build-all:
     @just build-zellij-all
     @just build-mdbook-all
 
-# 增量构建：只构建过去 since 时间内（默认 24h）commit/工作区中发生变化的包
+# Incremental build: only build packages changed in commits or the working tree since the given time (default: 24h)
 build-changed since="24 hours ago":
     ./scripts/incremental-build.ts "{{ since }}"
 
-# 只列出受影响的包，不执行构建
+# List affected packages only, without building
 build-changed-dry since="24 hours ago":
     ./scripts/incremental-build.ts "{{ since }}" --dry-run
 
