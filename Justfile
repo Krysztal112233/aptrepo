@@ -82,3 +82,4 @@ build-changed-dry since="24 hours ago":
 
 repo:
     ./scripts/repo-build.ts
+    ./scripts/repo-index.ts
