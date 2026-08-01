@@ -1,5 +1,8 @@
-himalaya (1.2.0-1) UNRELEASED; urgency=medium
+himalaya (2.0.0-1) UNRELEASED; urgency=medium
 
-  * Build the upstream Himalaya release from source.
+  * New upstream release.
+  * Generate man pages with the renamed "manual" subcommand.
+  * Write shell completions with "completion --dir" instead of stdout
+    redirection.
 
- -- Krysztal Huang <krysztal.huang@outlook.com>  Thu, 16 Jul 2026 10:36:22 +0800
+ -- Krysztal Huang <krysztal.huang@outlook.com>  Sun, 02 Aug 2026 00:54:21 +0800
