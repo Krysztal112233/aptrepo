@@ -1,0 +1,20 @@
+Source: uv
+Section: utils
+Priority: optional
+Maintainer: Krysztal Huang <krysztal.huang@outlook.com>
+Build-Depends:
+ {{RUST_PACKAGE_NAME}} (= {{RUST_PACKAGE_VERSION}}),
+ cmake,
+ debhelper-compat (= 13),
+ pkgconf,
+Standards-Version: 4.7.2
+Homepage: https://docs.astral.sh/uv/
+Rules-Requires-Root: no
+
+Package: uv
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: fast Python package and project manager
+ uv is an extremely fast Python package and project manager written in Rust.
+ It provides a single tool for managing Python versions, projects, scripts,
+ dependencies, virtual environments, packages, and command-line tools.

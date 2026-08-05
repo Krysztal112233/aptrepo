@@ -1,0 +1,8 @@
+target/release/uv usr/bin
+target/release/uvx usr/bin
+debian/generated/uv usr/share/bash-completion/completions
+debian/generated/uvx usr/share/bash-completion/completions
+debian/generated/uv.fish usr/share/fish/vendor_completions.d
+debian/generated/uvx.fish usr/share/fish/vendor_completions.d
+debian/generated/_uv usr/share/zsh/vendor-completions
+debian/generated/_uvx usr/share/zsh/vendor-completions

@@ -65,12 +65,21 @@ build-mdbook-all:
     just build-mdbook trixie
     just build-mdbook forky
 
+build-uv suite="trixie": setup-rust
+    ./packages/uv/build.ts "{{ suite }}"
+
+build-uv-all:
+    just build-uv bookworm
+    just build-uv trixie
+    just build-uv forky
+
 build-all:
     @just build-lazygit-all
     @just build-himalaya-all
     @just build-starship-all
     @just build-zellij-all
     @just build-mdbook-all
+    @just build-uv-all
 
 # Incremental build: only build packages changed in commits or the working tree since the given time (default: 24h)
 build-changed since="24 hours ago":
