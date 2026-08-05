@@ -1,3 +1,5 @@
+set minimum-version := '1.58.0'
+
 # ---- Repo-wide / setup ----
 
 check-config:
