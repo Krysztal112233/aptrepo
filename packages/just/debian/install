@@ -1,0 +1,5 @@
+target/release/just usr/bin
+debian/generated/man/just.1.gz usr/share/man/man1
+debian/generated/just.bash usr/share/bash-completion/completions
+debian/generated/just.fish usr/share/fish/vendor_completions.d
+debian/generated/_just usr/share/zsh/vendor-completions

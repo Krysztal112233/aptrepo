@@ -1,0 +1,5 @@
+just (1.58.0-1) UNRELEASED; urgency=medium
+
+  * Build the upstream just release from source.
+
+ -- Krysztal Huang <krysztal.huang@outlook.com>  Wed, 05 Aug 2026 23:46:02 +0800

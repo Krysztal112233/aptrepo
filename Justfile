@@ -37,6 +37,7 @@ mod starship "packages/starship/justfile"
 mod zellij   "packages/zellij/justfile"
 mod mdbook   "packages/mdbook/justfile"
 mod uv       "packages/uv/justfile"
+mod just     "packages/just/justfile"
 
 # ---- Aggregate ----
 
@@ -47,6 +48,7 @@ build-all:
     @just zellij::build-all
     @just mdbook::build-all
     @just uv::build-all
+    @just just::build-all
 
 # ---- Incremental build ----
 

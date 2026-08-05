@@ -1,0 +1,19 @@
+Source: just
+Section: utils
+Priority: optional
+Maintainer: Krysztal Huang <krysztal.huang@outlook.com>
+Build-Depends:
+ {{RUST_PACKAGE_NAME}} (= {{RUST_PACKAGE_VERSION}}),
+ debhelper-compat (= 13),
+Standards-Version: 4.7.2
+Homepage: https://github.com/casey/just
+Rules-Requires-Root: no
+
+Package: just
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: handy way to save and run project-specific commands
+ just is a command runner written in Rust. Commands, called recipes, are
+ stored in a file called a justfile with syntax inspired by make. It can be
+ used to run project-specific commands, with support for dependency
+ management, recipes with parameters, and modules.

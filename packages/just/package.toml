@@ -1,0 +1,14 @@
+[package]
+name = "just"
+version = "1.58.0"
+debian_revision = "1"
+
+[source]
+git = "https://github.com/casey/just"
+tag = "{version}"
+archive = "{git}/archive/refs/tags/{tag}.tar.gz"
+archive_root = "just-{version}"
+sha256 = "c8a36e6e9397f2fdfcb0cc246fcdb790b52a784f3c8cabc0d8baeb031852a148"
+
+[build]
+toolchain = "rust"

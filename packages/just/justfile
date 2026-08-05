@@ -1,0 +1,10 @@
+set no-cd
+
+build suite="trixie":
+    @just setup-rust
+    ./packages/just/build.ts "{{ suite }}"
+
+build-all:
+    @just just::build bookworm
+    @just just::build trixie
+    @just just::build forky
