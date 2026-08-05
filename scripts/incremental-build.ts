@@ -107,5 +107,5 @@ if (dryRun) Deno.exit(0);
 
 for (const name of [...affected].sort()) {
   console.log(`\n=== Building ${name} ===`);
-  await run("just", [`build-${name}-all`], projectDir);
+  await run("just", [`${name}::build-all`], projectDir);
 }

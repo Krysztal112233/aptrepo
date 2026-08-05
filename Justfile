@@ -1,3 +1,5 @@
+# ---- Repo-wide / setup ----
+
 check-config:
     ./scripts/check-config.ts
 
@@ -25,61 +27,26 @@ setup-sbuild-all:
     just setup-sbuild trixie
     just setup-sbuild forky
 
-build-lazygit suite="trixie": setup-go
-    ./packages/lazygit/build.ts "{{ suite }}"
+# ---- Package modules ----
 
-build-lazygit-all:
-    just build-lazygit bookworm
-    just build-lazygit trixie
-    just build-lazygit forky
+mod lazygit  "packages/lazygit/justfile"
+mod himalaya "packages/himalaya/justfile"
+mod starship "packages/starship/justfile"
+mod zellij   "packages/zellij/justfile"
+mod mdbook   "packages/mdbook/justfile"
+mod uv       "packages/uv/justfile"
 
-build-himalaya suite="trixie": setup-rust
-    ./packages/himalaya/build.ts "{{ suite }}"
-
-build-himalaya-all:
-    just build-himalaya bookworm
-    just build-himalaya trixie
-    just build-himalaya forky
-
-build-starship suite="trixie": setup-rust
-    ./packages/starship/build.ts "{{ suite }}"
-
-build-starship-all:
-    just build-starship bookworm
-    just build-starship trixie
-    just build-starship forky
-
-build-zellij suite="trixie": setup-rust
-    ./packages/zellij/build.ts "{{ suite }}"
-
-build-zellij-all:
-    just build-zellij bookworm
-    just build-zellij trixie
-    just build-zellij forky
-
-build-mdbook suite="trixie": setup-rust
-    ./packages/mdbook/build.ts "{{ suite }}"
-
-build-mdbook-all:
-    just build-mdbook bookworm
-    just build-mdbook trixie
-    just build-mdbook forky
-
-build-uv suite="trixie": setup-rust
-    ./packages/uv/build.ts "{{ suite }}"
-
-build-uv-all:
-    just build-uv bookworm
-    just build-uv trixie
-    just build-uv forky
+# ---- Aggregate ----
 
 build-all:
-    @just build-lazygit-all
-    @just build-himalaya-all
-    @just build-starship-all
-    @just build-zellij-all
-    @just build-mdbook-all
-    @just build-uv-all
+    @just lazygit::build-all
+    @just himalaya::build-all
+    @just starship::build-all
+    @just zellij::build-all
+    @just mdbook::build-all
+    @just uv::build-all
+
+# ---- Incremental build ----
 
 # Incremental build: only build packages changed in commits or the working tree since the given time (default: 24h)
 build-changed since="24 hours ago":
