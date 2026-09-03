@@ -1,0 +1,5 @@
+sccache (0.17.0-1) UNRELEASED; urgency=medium
+
+  * Build the upstream sccache release from source.
+
+ -- Krysztal Huang <krysztal.huang@outlook.com>  Thu, 03 Sep 2026 13:17:53 +0800

@@ -1,0 +1,20 @@
+Source: sccache
+Section: devel
+Priority: optional
+Maintainer: Krysztal Huang <krysztal.huang@outlook.com>
+Build-Depends:
+ {{RUST_PACKAGE_NAME}} (= {{RUST_PACKAGE_VERSION}}),
+ debhelper-compat (= 13),
+ libssl-dev,
+ pkgconf,
+Standards-Version: 4.7.2
+Homepage: {{SOURCE_GIT}}
+Rules-Requires-Root: no
+
+Package: sccache
+Architecture: any
+Depends: ca-certificates, ${misc:Depends}, ${shlibs:Depends}
+Description: compiler cache for fast recompilation of C/C++/Rust code
+ sccache speeds up recompilation by caching previous compilation results and
+ reusing them when the same compilation is requested again. It supports C,
+ C++, and Rust and can store cached objects locally or in remote storage.

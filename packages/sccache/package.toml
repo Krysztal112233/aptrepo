@@ -1,0 +1,14 @@
+[package]
+name = "sccache"
+version = "0.17.0"
+debian_revision = "1"
+
+[source]
+git = "https://github.com/mozilla/sccache"
+tag = "v{version}"
+archive = "{git}/archive/refs/tags/{tag}.tar.gz"
+archive_root = "sccache-{version}"
+sha256 = "49949ad1cf175c49da126dbb0c2e6a56bd9d1f626e8cc0be17b9668b914145c6"
+
+[build]
+toolchain = "rust"

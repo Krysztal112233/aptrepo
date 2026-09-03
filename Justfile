@@ -38,6 +38,7 @@ mod zellij   "packages/zellij/justfile"
 mod mdbook   "packages/mdbook/justfile"
 mod uv       "packages/uv/justfile"
 mod just     "packages/just/justfile"
+mod sccache  "packages/sccache/justfile"
 
 # ---- Aggregate ----
 
@@ -49,6 +50,7 @@ build-all:
     @just mdbook::build-all
     @just uv::build-all
     @just just::build-all
+    @just sccache::build-all
 
 # ---- Incremental build ----
 
