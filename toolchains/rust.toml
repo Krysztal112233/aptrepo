@@ -1,5 +1,5 @@
 kind = "rust"
-version = "1.95.0"
+version = "1.98.0"
 package_name = "aptrepo-rust"
 package_revision = "1"
 package_dependencies = ["libc6", "libgcc-s1"]
@@ -11,14 +11,14 @@ components = ["rustc", "cargo", "rust-std"]
 target = "x86_64-unknown-linux-gnu"
 
 [architectures.amd64.sha256]
-rustc = "8426a3d170a5879f5682f5fbdd024a1779b3951e7baba685af2d6dc32a6dfc15"
-cargo = "e74edd2cf7d0f1f1383b4f00eb90c843750bc489e2ccf7214e6476678a907425"
-rust-std = "047ea7098803d3500fa1072e9cee5392697e21525559e4458128a2bf874aa382"
+rustc = "0e37cb339f447fc44d6d781073bacacebfdc5612f2600e4c7e84c266f5f3aced"
+cargo = "2f512d170d3dd23e16ababcda32ee2e6d5172d861a7af1f504e0b1e270cafab9"
+rust-std = "f5022e6c95a5ad23cca2513dc8281200f585fa188de6370aa37b128a43f876a3"
 
 [architectures.arm64]
 target = "aarch64-unknown-linux-gnu"
 
 [architectures.arm64.sha256]
-rustc = "0fe3689eeaed603e5ef24572d11597d3edadaefd2cb181674ad621260f2501d2"
-cargo = "7c070aeba9bbf12073646995a03f36c346bb5f541d0078ba6d9dc2a7adaaf6af"
-rust-std = "3a21b271b1ff973b94d69b25e7a39992f9fbcae1ab6d9475844a23e6ad3908ac"
+rustc = "00590657f2356d7163ca5ef295283523974c340fa21bb94b420ce794f29b358c"
+cargo = "5784379d73ac881d15a9e67eed2882cd58c747c276221c23cdf9aff37e015ff6"
+rust-std = "a36f7ac98af20ef0ba6368aace0345efabbebaef7962eba99f47190fd256162d"
