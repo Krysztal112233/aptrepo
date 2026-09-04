@@ -18,10 +18,11 @@ override_dh_auto_build:
 	./lazygit completion zsh > debian/generated/_lazygit
 
 override_dh_auto_test:
-	go test ./... -short
+	mkdir .git; trap 'rmdir .git' EXIT; go test ./... -short
 
 override_dh_auto_install:
 	install -D -m 0755 lazygit debian/lazygit/usr/bin/lazygit
 
 override_dh_auto_clean:
 	rm -rf lazygit debian/.cache debian/generated
+	rmdir .git 2>/dev/null || true
