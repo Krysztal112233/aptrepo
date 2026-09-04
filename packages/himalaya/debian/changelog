@@ -1,8 +1,6 @@
-himalaya (2.0.0-1) UNRELEASED; urgency=medium
+himalaya (2.1.0-1) UNRELEASED; urgency=medium
 
   * New upstream release.
-  * Generate man pages with the renamed "manual" subcommand.
-  * Write shell completions with "completion --dir" instead of stdout
-    redirection.
+  * Stop installing the desktop entry removed upstream.
 
- -- Krysztal Huang <krysztal.huang@outlook.com>  Sun, 02 Aug 2026 00:54:21 +0800
+ -- Krysztal Huang <krysztal.huang@outlook.com>  Fri, 04 Sep 2026 16:25:28 +0800
