@@ -1,5 +1,5 @@
-uv (0.12.1-1) UNRELEASED; urgency=medium
+uv (0.12.9-1) UNRELEASED; urgency=medium
 
-  * Build the upstream uv release from source.
+  * New upstream release.
 
- -- Krysztal Huang <krysztal.huang@outlook.com>  Wed, 05 Aug 2026 22:31:07 +0800
+ -- Krysztal Huang <krysztal.huang@outlook.com>  Fri, 04 Sep 2026 16:25:28 +0800
