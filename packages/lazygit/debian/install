@@ -1,0 +1,3 @@
+debian/generated/lazygit.bash usr/share/bash-completion/completions
+debian/generated/lazygit.fish usr/share/fish/vendor_completions.d
+debian/generated/_lazygit usr/share/zsh/vendor-completions

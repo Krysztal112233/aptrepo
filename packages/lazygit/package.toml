@@ -1,7 +1,7 @@
 [package]
 name = "lazygit"
 version = "0.63.1"
-debian_revision = "1"
+debian_revision = "2"
 
 [source]
 git = "https://github.com/jesseduffield/lazygit"

@@ -12,6 +12,10 @@ export GOFLAGS := -mod=vendor -trimpath
 
 override_dh_auto_build:
 	go build -ldflags='-s -w -X main.version=$(DEB_VERSION_UPSTREAM) -X main.buildSource=debian' -o lazygit .
+	mkdir -p debian/generated
+	./lazygit completion bash > debian/generated/lazygit.bash
+	./lazygit completion fish > debian/generated/lazygit.fish
+	./lazygit completion zsh > debian/generated/_lazygit
 
 override_dh_auto_test:
 	go test ./... -short
@@ -20,4 +24,4 @@ override_dh_auto_install:
 	install -D -m 0755 lazygit debian/lazygit/usr/bin/lazygit
 
 override_dh_auto_clean:
-	rm -rf lazygit debian/.cache
+	rm -rf lazygit debian/.cache debian/generated
