@@ -1,6 +1,6 @@
 [package]
 name = "zellij"
-version = "0.44.3"
+version = "0.45.1"
 debian_revision = "1"
 
 [source]
@@ -8,7 +8,7 @@ git = "https://github.com/zellij-org/zellij"
 tag = "v{version}"
 archive = "{git}/archive/refs/tags/{tag}.tar.gz"
 archive_root = "zellij-{version}"
-sha256 = "33ae61fc802b59462fed49b424893596d3aa819646bdce53d5602f714c1264fe"
+sha256 = "5cbe711437d2a61afd9287165f6aca0bcccb9ab1473633665a5b11ed55467852"
 
 [build]
 toolchain = "rust"
