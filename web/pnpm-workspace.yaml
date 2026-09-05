@@ -1,0 +1,4 @@
+# vite 8 (rolldown) never invokes esbuild — it is only an auto-installed
+# optional peer, and its postinstall is just a binary self-check. Skip it.
+allowBuilds:
+  esbuild: false

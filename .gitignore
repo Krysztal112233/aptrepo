@@ -1,3 +1,5 @@
 /build/
 /repo/*
 !/repo/krysztal-archive-keyring.pgp
+/web/node_modules/
+/web/dist/

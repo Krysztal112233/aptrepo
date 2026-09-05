@@ -1,0 +1,26 @@
+{
+  "name": "aptrepo-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "prebuild": "node -e \"require('node:fs').rmSync('../repo/assets',{recursive:true,force:true})\"",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "vue": "^3.5.18"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.12",
+    "@types/node": "^26.4.1",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "daisyui": "^5.0.50",
+    "tailwindcss": "^4.1.12",
+    "typescript": "^5.9.2",
+    "vite": "^8.2.2",
+    "vue-tsc": "^3.0.6"
+  }
+}

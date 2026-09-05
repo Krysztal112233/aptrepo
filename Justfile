@@ -62,6 +62,20 @@ build-changed since="24 hours ago":
 build-changed-dry since="24 hours ago":
     ./scripts/incremental-build.ts "{{ since }}" --dry-run
 
+# ---- Web UI ----
+
+# Install web UI dependencies
+web-install:
+    pnpm --prefix web install
+
+# Build the pixel web UI into repo/ (index.html + assets/)
+web:
+    pnpm --prefix web run build
+
+# Dev server; proxies /index.json etc. to VITE_REPO_ORIGIN (default http://127.0.0.1:8137)
+web-dev:
+    pnpm --prefix web run dev
+
 repo:
     ./scripts/repo-build.ts
     ./scripts/repo-index.ts

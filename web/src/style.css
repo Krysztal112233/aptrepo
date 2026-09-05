@@ -1,0 +1,197 @@
+@import "tailwindcss";
+
+@plugin "daisyui" {
+  themes: false; /* only the two custom themes below */
+}
+
+/*
+ * Font: Departure Mono v1.500 by Helena Zhang — SIL OFL 1.1
+ * https://departuremono.com — license ships in /fonts/OFL.txt
+ * Pixel-perfect at font sizes in multiples of 11px.
+ */
+@font-face {
+  font-family: "Departure Mono";
+  src: url("./assets/DepartureMono-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ============ departure — faded industrial paper ============ */
+@plugin "daisyui/theme" {
+  name: "departure";
+  default: true;
+  color-scheme: light;
+  --color-base-100: #f2f1ea; /* panel paper */
+  --color-base-200: #e9e8df; /* page background */
+  --color-base-300: #c9c8bc; /* muted surface */
+  --color-base-content: #444444; /* structural ink */
+  --color-primary: #444444;
+  --color-primary-content: #f2f1ea;
+  --color-secondary: #67665e; /* 5.0:1 on base-100 (was #8a897c, 3.1:1) */
+  --color-secondary-content: #f2f1ea;
+  --color-accent: #ffa133; /* the rare utility spark — fills only, see --px-accent-ink for text */
+  --color-accent-content: #2b2b28;
+  --color-neutral: #444444;
+  --color-neutral-content: #f2f1ea;
+  --color-info: #4a6a7d; /* 5.0:1 (was #5b7a8c, 4.0:1) */
+  --color-info-content: #f2f1ea;
+  --color-success: #357440; /* 4.9:1 (was #3a7d44, 4.4:1) */
+  --color-success-content: #f2f1ea;
+  --color-warning: #9d5317; /* 5.1:1 (was #c2691f, 3.4:1) */
+  --color-warning-content: #f2f1ea;
+  --color-error: #b33f26; /* 5.0:1 (was #c2472b, 4.3:1) */
+  --color-error-content: #f2f1ea;
+  --radius-selector: 0px;
+  --radius-field: 0px;
+  --radius-box: 0px;
+  --border: 2px;
+  --depth: 0;
+  --noise: 0;
+}
+
+/* ============ departure-dark — night terminal ============ */
+@plugin "daisyui/theme" {
+  name: "departure-dark";
+  prefersdark: true;
+  color-scheme: dark;
+  --color-base-100: #22221e;
+  --color-base-200: #191916;
+  --color-base-300: #3a3a33;
+  --color-base-content: #c9c8bb;
+  --color-primary: #c9c8bb;
+  --color-primary-content: #191916;
+  --color-secondary: #96948a; /* 5.3:1 on base-100 (was #7d7c6e, 3.8:1) */
+  --color-secondary-content: #191916;
+  --color-accent: #ffa133;
+  --color-accent-content: #191916;
+  --color-neutral: #3a3a33;
+  --color-neutral-content: #c9c8bb;
+  --color-info: #7d97a6;
+  --color-info-content: #191916;
+  --color-success: #6ea06f;
+  --color-success-content: #191916;
+  --color-warning: #d98a3d;
+  --color-warning-content: #191916;
+  --color-error: #d96a4f;
+  --color-error-content: #191916;
+  --radius-selector: 0px;
+  --radius-field: 0px;
+  --radius-box: 0px;
+  --border: 2px;
+  --depth: 0;
+  --noise: 0;
+}
+
+/* Per-theme pixel ink/shade (custom vars must live outside daisyui/theme) */
+[data-theme="departure"] {
+  --px-ink: #444444;
+  --px-shade: rgba(68, 68, 68, 0.22);
+  --px-muted: #5f5e56; /* secondary text: 5.4:1 on paper */
+  --px-accent-ink: #9a4a00; /* accent as *text* on paper: 5.5:1 (pure #ffa133 is 1.8:1) */
+}
+[data-theme="departure-dark"] {
+  --px-ink: #000000;
+  --px-shade: rgba(0, 0, 0, 0.4);
+  --px-muted: #8f8e84; /* 5.0:1 on base-100 */
+  --px-accent-ink: #ffa133; /* 7.9:1 on base-100 — full-strength accent is fine here */
+}
+
+/* ============ pixel foundation ============ */
+html {
+  image-rendering: pixelated;
+}
+body {
+  font-family: "Departure Mono", ui-monospace, monospace;
+  font-size: 16.5px; /* 1.5 × 11px grid */
+  line-height: 1.5;
+  background-color: var(--color-base-200);
+  background-image:
+    linear-gradient(color-mix(in oklab, var(--color-base-content) 6%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in oklab, var(--color-base-content) 6%, transparent) 1px, transparent 1px);
+  background-size: 22px 22px; /* 2 × 11px grid */
+}
+/* Tailwind preflight resets these to the system mono stack — take them back */
+code,
+kbd,
+samp,
+pre {
+  font-family: "Departure Mono", ui-monospace, monospace;
+}
+
+/* display type: same font, wider tracking — the sci-fi effect */
+.font-ps {
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.5;
+}
+
+/* hard-edged panels: solid ink border + hard offset shadow, no blur */
+.px-panel {
+  border: 2px solid var(--px-ink);
+  box-shadow: 6px 6px 0 0 var(--px-shade);
+}
+.px-panel-flat {
+  border: 2px solid var(--px-ink);
+}
+.px-inset {
+  border: 2px solid var(--px-ink);
+  box-shadow: inset 3px 3px 0 0 rgba(0, 0, 0, 0.1);
+}
+
+/* flat rectangular buttons */
+.btn {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  box-shadow: 3px 3px 0 0 var(--px-shade);
+}
+.btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.px-link {
+  color: var(--px-accent-ink);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.px-link:hover {
+  background-color: var(--px-accent-ink);
+  color: var(--color-base-100);
+  text-decoration: none;
+}
+
+@keyframes blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+.blink {
+  animation: blink 1.06s steps(1) infinite;
+}
+
+.ver-kbd {
+  cursor: pointer;
+  user-select: all;
+  text-decoration: none;
+}
+.ver-kbd:hover {
+  background-color: var(--color-base-content);
+  color: var(--color-base-100);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blink {
+    animation: none;
+  }
+}
+
+/* daisyui dims inactive tabs below AA on base-300 — restore full ink */
+.tab {
+  color: var(--color-base-content);
+}

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en" data-theme="departure">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Krysztal's Debian Repository — departures board of published packages" />
+    <title>KRYSZTAL.APT — DEPARTURES</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='%23444444'/><rect x='3' y='3' width='10' height='10' fill='%23ffa133'/></svg>"
+    />
+
+    <!-- Apply stored theme before paint to avoid flash -->
+    <script>
+      (() => {
+        const v = localStorage.getItem("px-theme");
+        document.documentElement.dataset.theme = ["departure", "departure-dark"].includes(v)
+          ? v
+          : "departure";
+      })();
+    </script>
+  </head>
+  <body class="flex min-h-dvh flex-col">
+    <div id="app" class="flex flex-1 flex-col"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
