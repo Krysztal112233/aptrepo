@@ -31,24 +31,23 @@ const stats = computed(() => ({
     <!-- stats strip -->
     <div class="grid w-full grid-cols-2 lg:grid-cols-4 gap-6">
       <div class="px-panel bg-base-100 p-4 text-center">
-        <div class="font-ps text-[11px] text-[var(--px-muted)]">PACKAGES</div>
+        <div class="font-ps text-[16.5px] text-[var(--px-muted)]">PACKAGES</div>
         <div class="font-ps text-[33px] text-primary my-2">{{ stats.pkgs }}</div>
-        <div class="text-[11px] text-[var(--px-muted)]">published in pool/</div>
+        <div class="text-[16.5px] text-[var(--px-muted)]">published in pool/</div>
       </div>
       <div class="px-panel bg-base-100 p-4 text-center">
-        <div class="font-ps text-[11px] text-[var(--px-muted)]">SUITES</div>
+        <div class="font-ps text-[16.5px] text-[var(--px-muted)]">SUITES</div>
         <div class="font-ps text-[33px] text-secondary my-2">{{ stats.suites }}</div>
-        <div class="text-[11px] text-[var(--px-muted)]">debian releases</div>
+        <div class="text-[16.5px] text-[var(--px-muted)]">debian releases</div>
       </div>
       <div class="px-panel bg-base-100 p-4 text-center">
-        <div class="font-ps text-[11px] text-[var(--px-muted)]">ARCH</div>
+        <div class="font-ps text-[16.5px] text-[var(--px-muted)]">ARCH</div>
         <div class="font-ps text-[33px] text-[var(--px-accent-ink)] my-2">{{ stats.arch }}</div>
-        <div class="text-[11px] text-[var(--px-muted)]">cpu architectures</div>
+        <div class="text-[16.5px] text-[var(--px-muted)]">cpu architectures</div>
       </div>
-      <div class="px-panel bg-base-100 p-4 text-center">
-        <div class="font-ps text-[11px] text-[var(--px-muted)]">LAST BUILD</div>
-        <div class="font-ps text-[11px] text-success my-2 leading-relaxed">{{ stats.built }}</div>
-        <div class="text-[11px] text-[var(--px-muted)]">index generated at</div>
+      <div class="px-panel bg-base-100 p-4 text-center flex flex-col justify-center">
+        <div class="font-ps text-[16.5px] text-[var(--px-muted)]">LAST BUILD</div>
+        <div class="font-ps text-[16.5px] text-success my-2 leading-relaxed">{{ stats.built }}</div>
       </div>
     </div>
   </section>
