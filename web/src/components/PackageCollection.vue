@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { debNum, debFilename, debUrl, suiteStyle, useCopyFeedback } from "../repo";
+import { debFilename, debUrl, suiteStyle, useCopyFeedback } from "../repo";
 import type { RepoIndex } from "../types";
 
 defineProps<{ repo: RepoIndex }>();
@@ -40,11 +40,8 @@ const { copiedKey, copy } = useCopyFeedback();
               :key="suite"
               class="flex items-center justify-between gap-3 py-1"
             >
-              <span class="flex items-center gap-2">
-                <span class="badge font-ps text-[11px] uppercase rounded-none" :class="suiteStyle(i).badge">
-                  {{ suite }}
-                </span>
-                <span class="text-[var(--px-muted)] text-[11px]">{{ debNum(suite) }}</span>
+              <span class="badge font-ps text-[11px] uppercase rounded-none" :class="suiteStyle(i).badge">
+                {{ suite }}
               </span>
               <a
                 v-if="pkg.versions?.[suite]"
