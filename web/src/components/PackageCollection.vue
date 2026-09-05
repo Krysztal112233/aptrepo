@@ -1,45 +1,23 @@
 <script setup lang="ts">
-import { ref } from "vue";
 import { debNum, debFilename, debUrl, suiteStyle, useCopyFeedback } from "../repo";
 import type { RepoIndex } from "../types";
 
 defineProps<{ repo: RepoIndex }>();
 
-const tab = ref<"cards" | "matrix">("cards");
 const { copiedKey, copy } = useCopyFeedback();
 </script>
 
 <template>
   <section class="mb-16">
-    <div class="flex flex-wrap items-end justify-between gap-4 mb-6">
-      <div>
-        <h2 class="font-ps text-[22px]">░ DEPARTURES</h2>
-        <p class="text-[var(--px-muted)]">
-          what this repository ships, and for which debian release.
-        </p>
-      </div>
-      <div role="tablist" class="tabs tabs-box px-panel-flat bg-base-300 font-ps text-[11px] rounded-none">
-        <button
-          role="tab"
-          class="tab rounded-none"
-          :class="{ 'tab-active': tab === 'cards' }"
-          @click="tab = 'cards'"
-        >
-          ░ GRID
-        </button>
-        <button
-          role="tab"
-          class="tab rounded-none"
-          :class="{ 'tab-active': tab === 'matrix' }"
-          @click="tab = 'matrix'"
-        >
-          ░ BOARD
-        </button>
-      </div>
+    <div class="mb-6">
+      <h2 class="font-ps text-[22px]">░ DEPARTURES</h2>
+      <p class="text-[var(--px-muted)]">
+        what this repository ships, and for which debian release.
+      </p>
     </div>
 
     <!-- ========== card grid ========== -->
-    <div v-if="tab === 'cards'" class="grid gap-8 md:grid-cols-2">
+    <div class="grid gap-8 md:grid-cols-2">
       <article
         v-for="pkg in repo.packages"
         :key="pkg.name"
@@ -101,43 +79,6 @@ const { copiedKey, copy } = useCopyFeedback();
       <p v-if="!repo.packages.length" class="font-ps text-[11px] text-[var(--px-muted)] py-10">
         ░ NO DEPARTURES SCHEDULED…
       </p>
-    </div>
-
-    <!-- ========== departures board ========== -->
-    <div v-else class="overflow-x-auto px-panel bg-base-100">
-      <table class="table">
-        <thead class="font-ps text-[11px]">
-          <tr>
-            <th class="text-base-content">PACKAGE</th>
-            <th
-              v-for="(suite, i) in repo.suites"
-              :key="suite"
-              class="uppercase"
-              :class="suiteStyle(i).text"
-            >
-              {{ suite }}<br />
-              <span class="text-[11px] text-[var(--px-muted)]">{{ debNum(suite) }}</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="pkg in repo.packages" :key="pkg.name" class="hover:bg-base-200">
-            <td class="font-ps text-[11px] text-primary">{{ pkg.name }}</td>
-            <td v-for="suite in repo.suites" :key="suite">
-              <a
-                v-if="pkg.versions?.[suite]"
-                class="kbd ver-kbd bg-base-300 text-base-content border-2 border-[var(--px-ink)] rounded-none"
-                :href="debUrl(pkg.name, pkg.versions[suite], repo)"
-                :title="`download ${debFilename(pkg.name, pkg.versions[suite], repo)}`"
-                download
-              >
-                {{ pkg.versions[suite] }} ↓
-              </a>
-              <span v-else class="text-[var(--px-muted)]">—</span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
     </div>
   </section>
 </template>

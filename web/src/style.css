@@ -190,8 +190,3 @@ pre {
     animation: none;
   }
 }
-
-/* daisyui dims inactive tabs below AA on base-300 — restore full ink */
-.tab {
-  color: var(--color-base-content);
-}
