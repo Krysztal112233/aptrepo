@@ -36,9 +36,9 @@ load();
     <LoadingScreen v-if="loading" />
     <ErrorScreen v-else-if="error" :message="error" @retry="load" />
     <template v-else-if="repo">
+      <InstallGuide :repo="repo" />
       <SuiteStages :repo="repo" />
       <PackageCollection :repo="repo" />
-      <InstallGuide :repo="repo" />
     </template>
   </main>
 
