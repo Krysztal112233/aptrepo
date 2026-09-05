@@ -12,9 +12,6 @@ defineEmits<{ toggleTheme: [] }>();
       <span class="font-ps text-[16.5px]">deb<span class="text-[var(--px-accent-ink)]">.25565.io</span></span>
     </div>
     <div class="navbar-end gap-2">
-      <a class="btn btn-ghost btn-sm font-ps text-[11px]" href="index.json" target="_blank" rel="noopener">
-        index.json
-      </a>
       <button
         class="btn btn-secondary btn-sm font-ps text-[11px]"
         aria-label="Toggle theme"
