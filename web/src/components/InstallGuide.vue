@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import PixelSelect from "./PixelSelect.vue";
 import { BASE_URL, useCopyFeedback } from "../repo";
 import type { RepoIndex } from "../types";
 
@@ -50,12 +51,7 @@ const { copiedKey, copy } = useCopyFeedback();
       <div class="px-6 py-6">
         <div class="flex flex-wrap items-center gap-3 mb-4">
           <span class="font-ps text-[11px] text-secondary">DESTINATION:</span>
-          <select
-            v-model="suite"
-            class="select select-sm bg-base-300 text-[16.5px] border-2 border-[var(--px-ink)] rounded-none"
-          >
-            <option v-for="s in repo.suites" :key="s" :value="s">{{ s.toUpperCase() }}</option>
-          </select>
+          <PixelSelect v-model="suite" :options="repo.suites" />
           <button
             class="btn btn-accent btn-sm font-ps text-[11px] ml-auto"
             @click="copy('install', snippet)"
