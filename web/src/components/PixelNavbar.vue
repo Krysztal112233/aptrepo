@@ -9,7 +9,7 @@ defineEmits<{ toggleTheme: [] }>();
         <rect width="16" height="16" class="fill-neutral" />
         <rect x="3" y="3" width="10" height="10" class="fill-accent" />
       </svg>
-      <span class="font-ps text-[16.5px]">KRYSZTAL<span class="text-[var(--px-accent-ink)]">.APT</span></span>
+      <span class="font-ps text-[16.5px]">deb<span class="text-[var(--px-accent-ink)]">.25565.io</span></span>
     </div>
     <div class="navbar-end gap-2">
       <a class="btn btn-ghost btn-sm font-ps text-[11px]" href="index.json" target="_blank" rel="noopener">
