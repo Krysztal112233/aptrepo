@@ -10,7 +10,7 @@ import {
   requiredEnv,
   run,
 } from "./runtime.ts";
-import { goDebPath } from "./toolchains.ts";
+import { goDebPath, installedGoRoot } from "./toolchains.ts";
 
 const projectDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const config = await loadGoToolchainConfig(projectDir);
@@ -28,6 +28,7 @@ await Deno.mkdir(downloadDir, { recursive: true });
 await Deno.mkdir(dirname(goDeb), { recursive: true });
 
 if (!(await currentPackage())) await buildGoToolchain();
+await extractGoToolchain();
 
 console.log(`Ready: ${goDeb}`);
 
@@ -113,4 +114,22 @@ async function buildDeb(packageRoot: string, workDir: string): Promise<void> {
   const temporaryDestination = `${goDeb}.part`;
   await Deno.copyFile(temporaryDeb, temporaryDestination);
   await Deno.rename(temporaryDestination, goDeb);
+}
+
+async function extractGoToolchain(): Promise<void> {
+  const installedRoot = installedGoRoot(
+    cacheHome,
+    architecture,
+    config,
+  );
+  const go = join(
+    installedRoot,
+    config.installPrefix.slice(1),
+    "bin/go",
+  );
+  if (await exists(go)) return;
+
+  await Deno.remove(installedRoot, { recursive: true }).catch(() => {});
+  await Deno.mkdir(installedRoot, { recursive: true });
+  await run("dpkg-deb", ["--extract", goDeb, installedRoot]);
 }

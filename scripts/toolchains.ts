@@ -31,6 +31,20 @@ export function rustDebPath(
   );
 }
 
+export function installedGoRoot(
+  cacheHome: string,
+  architecture: DebianArchitecture,
+  config: GoToolchainConfig,
+): string {
+  const identity = `go-${config.version}-${config.fingerprint.slice(0, 12)}`;
+  return join(
+    cacheHome,
+    "aptrepo/toolchains/installed",
+    identity,
+    architecture,
+  );
+}
+
 export function installedRustRoot(
   cacheHome: string,
   architecture: DebianArchitecture,

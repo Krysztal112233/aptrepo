@@ -20,7 +20,12 @@ import {
   requiredEnv,
   run,
 } from "./runtime.ts";
-import { goDebPath, installedRustRoot, rustDebPath } from "./toolchains.ts";
+import {
+  goDebPath,
+  installedGoRoot,
+  installedRustRoot,
+  rustDebPath,
+} from "./toolchains.ts";
 
 const versionSuffixes = new Map([
   ["bookworm", "deb12u1"],
@@ -211,11 +216,30 @@ async function createGoAdapter(
     environment.architecture,
     config,
   );
-  if (!(await exists(goToolchain))) {
+  const goBin = join(
+    installedGoRoot(
+      environment.cacheHome,
+      environment.architecture,
+      config,
+    ),
+    config.installPrefix.slice(1),
+    "bin",
+  );
+  const go = join(goBin, "go");
+  if (!(await exists(goToolchain)) || !(await exists(go))) {
     throw new Error(
       "Missing Go build toolchain\nRun: just setup-go",
     );
   }
+
+  const vendoredIdentity = [
+    environment.packageConfig.source.sha256.slice(0, 12),
+    config.fingerprint.slice(0, 12),
+  ].join("-");
+  const vendoredOrig = join(
+    environment.downloadDir,
+    `${environment.packageConfig.name}_${environment.packageConfig.version}.${vendoredIdentity}.orig.tar.gz`,
+  );
 
   return {
     extraPackages: [goToolchain],
@@ -226,9 +250,12 @@ async function createGoAdapter(
     rulesReplacements: {
       GO_BINARY_PATH: join(config.installPrefix, "bin"),
     },
-    async prepareSource({ download, workDir }) {
-      await run("tar", ["-xzf", download, "-C", workDir]);
-      return download;
+    prepareSource(sourceEnvironment) {
+      return prepareGoSource(
+        sourceEnvironment,
+        go,
+        vendoredOrig,
+      );
     },
   };
 }
@@ -283,6 +310,59 @@ async function createRustAdapter(
       );
     },
   };
+}
+
+async function prepareGoSource(
+  environment: SourceEnvironment,
+  go: string,
+  vendoredOrig: string,
+): Promise<string> {
+  if (await exists(vendoredOrig)) {
+    await run("tar", [
+      "-xzf",
+      vendoredOrig,
+      "-C",
+      environment.workDir,
+    ]);
+    return vendoredOrig;
+  }
+
+  await run("tar", [
+    "-xzf",
+    environment.download,
+    "-C",
+    environment.workDir,
+  ]);
+  if (!(await exists(environment.sourceDir))) {
+    throw new Error(
+      `${environment.packageConfig.configPath}: archive_root was not found after extraction`,
+    );
+  }
+
+  const vendorDir = join(environment.sourceDir, "vendor");
+  if (!(await exists(vendorDir))) {
+    await run(go, ["mod", "vendor"], environment.sourceDir);
+  }
+
+  const temporaryOrig = await Deno.makeTempFile({
+    dir: environment.downloadDir,
+    prefix: `.${environment.packageConfig.name}-orig-`,
+    suffix: ".tar.gz",
+  });
+  await run("tar", [
+    "--sort=name",
+    "--mtime=@0",
+    "--owner=0",
+    "--group=0",
+    "--numeric-owner",
+    "-czf",
+    temporaryOrig,
+    "-C",
+    environment.workDir,
+    environment.packageConfig.source.archiveRoot,
+  ]);
+  await Deno.rename(temporaryOrig, vendoredOrig);
+  return vendoredOrig;
 }
 
 async function prepareRustSource(
