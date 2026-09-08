@@ -11,3 +11,8 @@ dependencies are vendored automatically before the source package is built.
 
 Neither example is included in `just check-config` or `just build-all` while it
 remains under `examples/`.
+
+The copied `build.ts` accepts `[suite] [all|amd64|arm64]`, defaulting to trixie
+and both architectures serially. Prepare the selected chroots and the matching
+toolchain packages (including host-native vendoring tools) first; see
+[Building Packages](../docs/building-packages.md).
