@@ -8,7 +8,6 @@ import {
   loadPackageConfig,
   loadRustToolchainConfig,
   type PackageConfig,
-  parseArchitecture,
 } from "./config.ts";
 import {
   capture,
@@ -17,7 +16,6 @@ import {
   exists,
   releaseChangelog,
   renderDebianTemplate,
-  requiredEnv,
   run,
 } from "./runtime.ts";
 import {
@@ -27,16 +25,37 @@ import {
   rustDebPath,
 } from "./toolchains.ts";
 
+import {
+  cacheHome as getCacheHome,
+  chrootPath,
+  hostArchitecture,
+  parseBuildArgs,
+  preflightBuild,
+  type Suite,
+  targetArchitectures,
+} from "./build-targets.ts";
+
 const versionSuffixes = new Map([
   ["bookworm", "deb12u1"],
   ["trixie", "deb13u1"],
   ["forky", "deb14u1"],
 ]);
 
+const buildRuntime = {
+  capture,
+  run,
+  downloadVerified,
+  hostArchitecture,
+  cacheHome: getCacheHome,
+  preflightBuild,
+};
+
 interface BuildEnvironment {
+  runtime: typeof buildRuntime;
   projectDir: string;
   packageConfig: PackageConfig;
   architecture: DebianArchitecture;
+  hostArchitecture: DebianArchitecture;
   cacheHome: string;
   downloadDir: string;
   download: string;
@@ -56,42 +75,54 @@ interface BuildAdapter {
 
 export async function buildPackage(
   packageModuleUrl: string,
-  suite = Deno.args[0] ?? "trixie",
+  suite = "trixie",
+  architectureSelection = "all",
+  runtime = buildRuntime,
 ): Promise<void> {
-  const versionSuffix = versionSuffixes.get(suite);
-  if (!versionSuffix) {
-    console.error(`Unsupported Debian release: ${suite}`);
-    Deno.exit(2);
+  const { suite: selectedSuite, selection } = parseBuildArgs([
+    suite,
+    architectureSelection,
+  ]);
+  const host = await runtime.hostArchitecture();
+  const cacheHome = runtime.cacheHome();
+  await runtime.preflightBuild([selectedSuite], selection, host, cacheHome);
+  for (const architecture of targetArchitectures(selection)) {
+    await buildTarget(
+      packageModuleUrl,
+      selectedSuite,
+      architecture,
+      host,
+      cacheHome,
+      runtime,
+    );
   }
+}
 
+async function buildTarget(
+  packageModuleUrl: string,
+  suite: Suite,
+  architecture: DebianArchitecture,
+  hostArchitecture: DebianArchitecture,
+  cacheHome: string,
+  runtime: typeof buildRuntime,
+): Promise<void> {
+  const versionSuffix = versionSuffixes.get(suite)!;
   const packageDir = dirname(fileURLToPath(packageModuleUrl));
   const projectDir = resolve(packageDir, "../..");
   const packageConfig = await loadPackageConfig(packageDir);
   const packageVersion = `${packageConfig.baseVersion}~${versionSuffix}`;
-  const architecture = parseArchitecture(
-    await capture("dpkg", ["--print-architecture"]),
-  );
-  const cacheHome = Deno.env.get("XDG_CACHE_HOME") ??
-    join(requiredEnv("HOME"), ".cache");
-  const chroot = join(
-    cacheHome,
-    "sbuild",
-    `${suite}-${architecture}.tar.zst`,
-  );
-  if (!(await exists(chroot))) {
-    throw new Error(
-      `Missing sbuild chroot: ${chroot}\nRun: just setup-sbuild ${suite}`,
-    );
-  }
+  const chroot = chrootPath(cacheHome, suite, architecture);
 
   const archiveName = `${packageConfig.name}-${packageConfig.version}.tar.gz`;
   const downloadDir = join(projectDir, "build/downloads");
   const outputDir = join(projectDir, "build", suite);
   const download = join(downloadDir, archiveName);
   const environment: BuildEnvironment = {
+    runtime,
     projectDir,
     packageConfig,
     architecture,
+    hostArchitecture,
     cacheHome,
     downloadDir,
     download,
@@ -100,7 +131,7 @@ export async function buildPackage(
 
   await Deno.mkdir(downloadDir, { recursive: true });
   await Deno.mkdir(outputDir, { recursive: true });
-  await downloadVerified(
+  await runtime.downloadVerified(
     packageConfig.source.archive,
     download,
     packageConfig.source.sha256,
@@ -135,7 +166,7 @@ export async function buildPackage(
         `${packageConfig.name}_${packageConfig.version}.orig.tar.gz`,
       ),
     );
-    await run("cp", ["-R", join(packageDir, "debian"), sourceDir]);
+    await runtime.run("cp", ["-R", join(packageDir, "debian"), sourceDir]);
     const debianDir = join(sourceDir, "debian");
     await renderDebianTemplate(debianDir, "control", {
       ...adapter.controlReplacements,
@@ -154,7 +185,7 @@ export async function buildPackage(
       suite,
     );
 
-    await run(
+    await runtime.run(
       "dpkg-buildpackage",
       ["--build=source", "--no-sign", "--no-check-builddeps"],
       sourceDir,
@@ -164,7 +195,7 @@ export async function buildPackage(
       workDir,
       `${packageConfig.name}_${packageVersion}.dsc`,
     );
-    await run("sbuild", [
+    await runtime.run("sbuild", [
       "--chroot-mode=unshare",
       `--chroot=${chroot}`,
       `--dist=${suite}`,
@@ -219,7 +250,7 @@ async function createGoAdapter(
   const goBin = join(
     installedGoRoot(
       environment.cacheHome,
-      environment.architecture,
+      environment.hostArchitecture,
       config,
     ),
     config.installPrefix.slice(1),
@@ -228,7 +259,7 @@ async function createGoAdapter(
   const go = join(goBin, "go");
   if (!(await exists(goToolchain)) || !(await exists(go))) {
     throw new Error(
-      "Missing Go build toolchain\nRun: just setup-go",
+      `Missing Go build toolchain\nRun: just setup-go ${environment.architecture}`,
     );
   }
 
@@ -272,7 +303,7 @@ async function createRustAdapter(
   const cargo = join(
     installedRustRoot(
       environment.cacheHome,
-      environment.architecture,
+      environment.hostArchitecture,
       config,
     ),
     config.installPrefix.slice(1),
@@ -280,7 +311,7 @@ async function createRustAdapter(
   );
   if (!(await exists(rustToolchain)) || !(await exists(cargo))) {
     throw new Error(
-      "Missing Rust build toolchain\nRun: just setup-rust",
+      `Missing Rust build toolchain\nRun: just setup-rust ${environment.architecture}`,
     );
   }
 
@@ -318,7 +349,7 @@ async function prepareGoSource(
   vendoredOrig: string,
 ): Promise<string> {
   if (await exists(vendoredOrig)) {
-    await run("tar", [
+    await environment.runtime.run("tar", [
       "-xzf",
       vendoredOrig,
       "-C",
@@ -327,7 +358,7 @@ async function prepareGoSource(
     return vendoredOrig;
   }
 
-  await run("tar", [
+  await environment.runtime.run("tar", [
     "-xzf",
     environment.download,
     "-C",
@@ -341,7 +372,7 @@ async function prepareGoSource(
 
   const vendorDir = join(environment.sourceDir, "vendor");
   if (!(await exists(vendorDir))) {
-    await run(go, ["mod", "vendor"], environment.sourceDir);
+    await environment.runtime.run(go, ["mod", "vendor"], environment.sourceDir);
   }
 
   const temporaryOrig = await Deno.makeTempFile({
@@ -349,7 +380,7 @@ async function prepareGoSource(
     prefix: `.${environment.packageConfig.name}-orig-`,
     suffix: ".tar.gz",
   });
-  await run("tar", [
+  await environment.runtime.run("tar", [
     "--sort=name",
     "--mtime=@0",
     "--owner=0",
@@ -371,7 +402,7 @@ async function prepareRustSource(
   vendoredOrig: string,
 ): Promise<string> {
   if (await exists(vendoredOrig)) {
-    await run("tar", [
+    await environment.runtime.run("tar", [
       "-xzf",
       vendoredOrig,
       "-C",
@@ -380,7 +411,7 @@ async function prepareRustSource(
     return vendoredOrig;
   }
 
-  await run("tar", [
+  await environment.runtime.run("tar", [
     "-xzf",
     environment.download,
     "-C",
@@ -392,7 +423,7 @@ async function prepareRustSource(
     );
   }
 
-  const cargoConfig = await capture(
+  const cargoConfig = await environment.runtime.capture(
     cargo,
     ["vendor", "--locked", "--versioned-dirs", "vendor"],
     environment.sourceDir,
@@ -410,7 +441,7 @@ async function prepareRustSource(
     prefix: `.${environment.packageConfig.name}-orig-`,
     suffix: ".tar.gz",
   });
-  await run("tar", [
+  await environment.runtime.run("tar", [
     "--sort=name",
     "--mtime=@0",
     "--owner=0",

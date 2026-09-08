@@ -4,4 +4,4 @@ signing_key = "78AF8C508EA3E2D5A0679C4B76E9A5CF17538840"
 
 components = ["main"]
 suites = ["bookworm", "trixie", "forky"]
-architectures = ["amd64"]
+architectures = ["amd64", "arm64"]
