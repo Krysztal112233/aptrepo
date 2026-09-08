@@ -1,5 +1,5 @@
 kind = "go"
-version = "1.25.12"
+version = "1.27.1"
 package_name = "aptrepo-go"
 package_revision = "1"
 package_dependencies = ["libc6"]
@@ -8,8 +8,8 @@ install_prefix = "/opt/aptrepo/go"
 
 [architectures.amd64]
 target = "linux-amd64"
-sha256 = "234828b7a89e0e303d2556310ee549fbcf253d28de937bac3da13d6294262ac1"
+sha256 = "63d339f0da5ab53635a56f2490a7984dfe12dfcff22ad749f63edaf590168445"
 
 [architectures.arm64]
 target = "linux-arm64"
-sha256 = "8b5884aef89600aef5b0b051fb971f11f49bb996521e911f30f02a66884f7bd2"
+sha256 = "3450b45a3f9ee8568792736a5c5e70a1f2e9b36c35a8f74958c03e51d7d92bec"
