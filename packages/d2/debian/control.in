@@ -1,0 +1,17 @@
+Source: d2
+Section: graphics
+Priority: optional
+Maintainer: Krysztal Huang <krysztal.huang@outlook.com>
+Build-Depends:
+ {{GO_PACKAGE_NAME}} (>= {{GO_PACKAGE_VERSION}}),
+ debhelper-compat (= 13),
+Standards-Version: 4.7.2
+Homepage: {{SOURCE_GIT}}
+Rules-Requires-Root: no
+
+Package: d2
+Architecture: any
+Depends: ${misc:Depends}
+Description: modern diagram scripting language
+ D2 is a modern diagram scripting language that turns text into diagrams.
+ It compiles .d2 source files into SVG, PNG, PDF, and other formats.

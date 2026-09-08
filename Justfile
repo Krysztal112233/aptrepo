@@ -39,6 +39,7 @@ mod mdbook   "packages/mdbook/justfile"
 mod uv       "packages/uv/justfile"
 mod just     "packages/just/justfile"
 mod sccache  "packages/sccache/justfile"
+mod d2       "packages/d2/justfile"
 
 # ---- Aggregate ----
 
@@ -51,6 +52,7 @@ build-all:
     @just uv::build-all
     @just just::build-all
     @just sccache::build-all
+    @just d2::build-all
 
 # ---- Incremental build ----
 

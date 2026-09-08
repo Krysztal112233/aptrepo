@@ -1,0 +1,10 @@
+set no-cd
+
+build suite="trixie":
+    @just setup-go
+    ./packages/d2/build.ts "{{ suite }}"
+
+build-all:
+    @just d2::build bookworm
+    @just d2::build trixie
+    @just d2::build forky

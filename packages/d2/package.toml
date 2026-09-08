@@ -1,0 +1,14 @@
+[package]
+name = "d2"
+version = "0.9.0"
+debian_revision = "1"
+
+[source]
+git = "https://github.com/d2lang/d2"
+tag = "v{version}"
+archive = "{git}/archive/refs/tags/{tag}.tar.gz"
+archive_root = "d2-{version}"
+sha256 = "1256ad3907bceb4fcee7ed40d17c5726f8b602eea900e94500ba3352e96febbc"
+
+[build]
+toolchain = "go"
