@@ -1,10 +1,12 @@
 set no-cd
 
-build suite="trixie":
-    @just setup-rust
-    ./packages/himalaya/build.ts "{{ suite }}"
+build suite="trixie" arch="all":
+    ./scripts/build-targets.ts --build {{quote(suite)}} {{quote(arch)}}
+    @just setup-rust {{quote(arch)}}
+    ./packages/himalaya/build.ts {{quote(suite)}} {{quote(arch)}}
 
-build-all:
-    @just himalaya::build bookworm
-    @just himalaya::build trixie
-    @just himalaya::build forky
+build-all arch="all":
+    ./scripts/build-targets.ts --build-all {{quote(arch)}}
+    @just himalaya::build bookworm {{quote(arch)}}
+    @just himalaya::build trixie {{quote(arch)}}
+    @just himalaya::build forky {{quote(arch)}}

@@ -1,10 +1,12 @@
 set no-cd
 
-build suite="trixie":
-    @just setup-rust
-    ./packages/sccache/build.ts "{{ suite }}"
+build suite="trixie" arch="all":
+    ./scripts/build-targets.ts --build {{quote(suite)}} {{quote(arch)}}
+    @just setup-rust {{quote(arch)}}
+    ./packages/sccache/build.ts {{quote(suite)}} {{quote(arch)}}
 
-build-all:
-    @just sccache::build bookworm
-    @just sccache::build trixie
-    @just sccache::build forky
+build-all arch="all":
+    ./scripts/build-targets.ts --build-all {{quote(arch)}}
+    @just sccache::build bookworm {{quote(arch)}}
+    @just sccache::build trixie {{quote(arch)}}
+    @just sccache::build forky {{quote(arch)}}

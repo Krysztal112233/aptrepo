@@ -15,6 +15,13 @@ jobs:
         with:
           deno-version: v2.x
 
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: just
+
+      - name: Hermetic build tests
+        run: deno test --allow-env --allow-read --allow-write --allow-run scripts/*_test.ts
+
       - name: Format
         run: deno fmt --check "**/*.ts"
 

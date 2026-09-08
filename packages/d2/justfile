@@ -1,10 +1,12 @@
 set no-cd
 
-build suite="trixie":
-    @just setup-go
-    ./packages/d2/build.ts "{{ suite }}"
+build suite="trixie" arch="all":
+    ./scripts/build-targets.ts --build {{quote(suite)}} {{quote(arch)}}
+    @just setup-go {{quote(arch)}}
+    ./packages/d2/build.ts {{quote(suite)}} {{quote(arch)}}
 
-build-all:
-    @just d2::build bookworm
-    @just d2::build trixie
-    @just d2::build forky
+build-all arch="all":
+    ./scripts/build-targets.ts --build-all {{quote(arch)}}
+    @just d2::build bookworm {{quote(arch)}}
+    @just d2::build trixie {{quote(arch)}}
+    @just d2::build forky {{quote(arch)}}

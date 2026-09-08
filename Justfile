@@ -11,23 +11,24 @@ check-required:
 fmt:
     deno fmt **/**.ts
 
-setup-go:
-    ./scripts/setup-go.ts
+setup-go arch="all":
+    ./scripts/setup-go.ts {{quote(arch)}}
 
-setup-rust:
-    ./scripts/setup-rust.ts
+setup-rust arch="all":
+    ./scripts/setup-rust.ts {{quote(arch)}}
 
-setup-toolchains:
-    just setup-go
-    just setup-rust
+setup-toolchains arch="all":
+    just setup-go {{quote(arch)}}
+    just setup-rust {{quote(arch)}}
 
-setup-sbuild suite="trixie":
-    ./scripts/setup-sbuild "{{ suite }}"
+setup-sbuild suite="trixie" arch="all":
+    ./scripts/setup-sbuild {{quote(suite)}} {{quote(arch)}}
 
-setup-sbuild-all:
-    just setup-sbuild bookworm
-    just setup-sbuild trixie
-    just setup-sbuild forky
+setup-sbuild-all arch="all":
+    ./scripts/build-targets.ts --setup-all {{quote(arch)}}
+    just setup-sbuild bookworm {{quote(arch)}}
+    just setup-sbuild trixie {{quote(arch)}}
+    just setup-sbuild forky {{quote(arch)}}
 
 # ---- Package modules ----
 
@@ -43,26 +44,27 @@ mod d2       "packages/d2/justfile"
 
 # ---- Aggregate ----
 
-build-all:
-    @just lazygit::build-all
-    @just himalaya::build-all
-    @just starship::build-all
-    @just zellij::build-all
-    @just mdbook::build-all
-    @just uv::build-all
-    @just just::build-all
-    @just sccache::build-all
-    @just d2::build-all
+build-all arch="all":
+    ./scripts/build-targets.ts --build-all {{quote(arch)}}
+    @just lazygit::build-all {{quote(arch)}}
+    @just himalaya::build-all {{quote(arch)}}
+    @just starship::build-all {{quote(arch)}}
+    @just zellij::build-all {{quote(arch)}}
+    @just mdbook::build-all {{quote(arch)}}
+    @just uv::build-all {{quote(arch)}}
+    @just just::build-all {{quote(arch)}}
+    @just sccache::build-all {{quote(arch)}}
+    @just d2::build-all {{quote(arch)}}
 
 # ---- Incremental build ----
 
 # Incremental build: only build packages changed in commits or the working tree since the given time (default: 24h)
-build-changed since="24 hours ago":
-    ./scripts/incremental-build.ts "{{ since }}"
+build-changed since="24 hours ago" arch="all":
+    ./scripts/incremental-build.ts {{quote(since)}} {{quote(arch)}}
 
 # List affected packages only, without building
-build-changed-dry since="24 hours ago":
-    ./scripts/incremental-build.ts "{{ since }}" --dry-run
+build-changed-dry since="24 hours ago" arch="all":
+    ./scripts/incremental-build.ts {{quote(since)}} {{quote(arch)}} --dry-run
 
 # ---- Web UI ----
 

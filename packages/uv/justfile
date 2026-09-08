@@ -1,10 +1,12 @@
 set no-cd
 
-build suite="trixie":
-    @just setup-rust
-    ./packages/uv/build.ts "{{ suite }}"
+build suite="trixie" arch="all":
+    ./scripts/build-targets.ts --build {{quote(suite)}} {{quote(arch)}}
+    @just setup-rust {{quote(arch)}}
+    ./packages/uv/build.ts {{quote(suite)}} {{quote(arch)}}
 
-build-all:
-    @just uv::build bookworm
-    @just uv::build trixie
-    @just uv::build forky
+build-all arch="all":
+    ./scripts/build-targets.ts --build-all {{quote(arch)}}
+    @just uv::build bookworm {{quote(arch)}}
+    @just uv::build trixie {{quote(arch)}}
+    @just uv::build forky {{quote(arch)}}

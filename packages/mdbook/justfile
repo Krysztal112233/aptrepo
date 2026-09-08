@@ -1,10 +1,12 @@
 set no-cd
 
-build suite="trixie":
-    @just setup-rust
-    ./packages/mdbook/build.ts "{{ suite }}"
+build suite="trixie" arch="all":
+    ./scripts/build-targets.ts --build {{quote(suite)}} {{quote(arch)}}
+    @just setup-rust {{quote(arch)}}
+    ./packages/mdbook/build.ts {{quote(suite)}} {{quote(arch)}}
 
-build-all:
-    @just mdbook::build bookworm
-    @just mdbook::build trixie
-    @just mdbook::build forky
+build-all arch="all":
+    ./scripts/build-targets.ts --build-all {{quote(arch)}}
+    @just mdbook::build bookworm {{quote(arch)}}
+    @just mdbook::build trixie {{quote(arch)}}
+    @just mdbook::build forky {{quote(arch)}}
