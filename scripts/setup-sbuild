@@ -2,51 +2,50 @@
 
 set -eu
 
-suite=${1:-trixie}
+if [ "$#" -gt 2 ]; then
+	echo "Usage: $0 [suite] [all|amd64|arm64]" >&2
+	exit 2
+fi
+suite=${1-trixie}
+selection=${2-all}
 case "$suite" in
 bookworm | trixie | forky) ;;
-*)
-	echo "Unsupported Debian release: $suite" >&2
-	exit 2
-	;;
+*) echo "Unsupported Debian release: $suite" >&2; exit 2 ;;
 esac
-
-architecture=$(dpkg --print-architecture)
-case "$architecture" in
-amd64 | arm64) ;;
-*)
-	echo "Unsupported architecture: $architecture" >&2
-	exit 2
-	;;
-esac
+# Validate the entire request and foreign execution before creating target 1.
+architectures=$("$(dirname "$0")/build-targets.ts" --setup "$suite" "$selection")
 
 cache_home=${XDG_CACHE_HOME:-"$HOME/.cache"}
 cache_dir="$cache_home/sbuild"
-chroot="$cache_dir/$suite-$architecture.tar.zst"
 mirror=${DEBIAN_MIRROR:-https://deb.debian.org/debian}
 
 mkdir -p "$cache_dir"
-temporary_dir=$(mktemp -d "$cache_dir/.$suite-$architecture.XXXXXX")
-trap 'rm -rf "$temporary_dir"' EXIT HUP INT TERM
-temporary_chroot="$temporary_dir/chroot.tar.zst"
+for architecture in $architectures; do
+	chroot="$cache_dir/$suite-$architecture.tar.zst"
+	temporary_dir=$(mktemp -d "$cache_dir/.$suite-$architecture.XXXXXX")
+	trap 'rm -rf "$temporary_dir"' EXIT HUP INT TERM
+	temporary_chroot="$temporary_dir/chroot.tar.zst"
 
-echo "Creating $chroot"
-# Keep mmdebstrap's apt progress descriptor below dash's single-digit limit.
-exec 3>&- 4>&- 5>&- 6>&- 7>&- 8>&- 9>&-
-unshare \
-	--mount \
-	--propagation private \
-	--map-auto \
-	--map-root-user \
-	mmdebstrap \
-	--mode=root \
-	--variant=buildd \
-	--include=ca-certificates \
-	--skip=output/dev \
-	--architectures="$architecture" \
-	"$suite" \
-	"$temporary_chroot" \
-	"$mirror"
+	echo "Creating $chroot"
+	# Keep mmdebstrap's apt progress descriptor below dash's single-digit limit.
+	exec 3>&- 4>&- 5>&- 6>&- 7>&- 8>&- 9>&-
+	unshare \
+		--mount \
+		--propagation private \
+		--map-auto \
+		--map-root-user \
+		mmdebstrap \
+		--mode=root \
+		--variant=buildd \
+		--include=ca-certificates \
+		--skip=output/dev \
+		--architectures="$architecture" \
+		"$suite" \
+		"$temporary_chroot" \
+		"$mirror"
 
-mv -f "$temporary_chroot" "$chroot"
-echo "Ready: $chroot"
+	mv -f "$temporary_chroot" "$chroot"
+	echo "Ready: $chroot"
+
+	rm -rf "$temporary_dir"
+done

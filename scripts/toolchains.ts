@@ -1,6 +1,22 @@
 #!/usr/bin/env -S deno run --allow-env=HOME,XDG_CACHE_HOME --allow-read --allow-write --allow-net --allow-run
 
 import { join } from "node:path";
+import { run } from "./runtime.ts";
+
+// Standalone Rust payloads already use prefix-relative paths. Do not run the
+// host-sniffing installer (or any target executable) to package foreign tools.
+export async function installRustComponent(
+  archiveRoot: string,
+  component: string,
+  prefix: string,
+): Promise<void> {
+  const source = join(archiveRoot, component);
+  await Deno.mkdir(prefix, { recursive: true });
+  for await (const entry of Deno.readDir(source)) {
+    if (entry.name === "manifest.in") continue;
+    await run("cp", ["-a", join(source, entry.name), prefix]);
+  }
+}
 import type {
   DebianArchitecture,
   GoToolchainConfig,
