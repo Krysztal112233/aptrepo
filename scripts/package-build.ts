@@ -86,7 +86,7 @@ export async function buildPackage(
   const host = await runtime.hostArchitecture();
   const cacheHome = runtime.cacheHome();
   await runtime.preflightBuild([selectedSuite], selection, host, cacheHome);
-  for (const architecture of targetArchitectures(selection)) {
+  for (const architecture of targetArchitectures(selection, selectedSuite)) {
     await buildTarget(
       packageModuleUrl,
       selectedSuite,

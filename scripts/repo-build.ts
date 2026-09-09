@@ -2,7 +2,11 @@
 
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { loadRepositoryConfig, type RepositoryConfig } from "./config.ts";
+import {
+  type DebianSuite,
+  loadRepositoryConfig,
+  type RepositoryConfig,
+} from "./config.ts";
 import { capture, exists, renderTemplate, run } from "./runtime.ts";
 
 const projectDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -11,7 +15,7 @@ const repoDir = join(projectDir, "repo");
 const distributionsTemplate = `{{#suites}}
 Origin: {{origin}}
 Label: {{label}}
-Codename: {{.}}
+Codename: {{name}}
 Architectures: {{architectures}}
 Components: {{components}}
 SignWith: {{signingKey}}
@@ -74,9 +78,11 @@ async function renderDistributions(
     origin: config.origin,
     label: config.label,
     signingKey: config.signingKey,
-    architectures: config.architectures.join(" "),
     components: config.components.join(" "),
-    suites: config.suites,
+    suites: config.suites.map((suite) => ({
+      name: suite,
+      architectures: config.suiteArchitectures[suite].join(" "),
+    })),
   }, "distributions template");
   if (await exists(path) && await Deno.readTextFile(path) === content) {
     return false;
@@ -126,7 +132,7 @@ async function readDebInfo(path: string): Promise<DebInfo> {
 
 async function includeSuite(
   config: RepositoryConfig,
-  suite: string,
+  suite: DebianSuite,
 ): Promise<void> {
   const buildDir = join(projectDir, "build", suite);
   if (!await exists(buildDir)) {
@@ -134,7 +140,10 @@ async function includeSuite(
     return;
   }
   const existing = await includedDebs(suite);
-  const accepted = new Set<string>([...config.architectures, "all"]);
+  const accepted = new Set<string>([
+    ...config.suiteArchitectures[suite],
+    "all",
+  ]);
   const names: string[] = [];
   for await (const entry of Deno.readDir(buildDir)) {
     if (entry.isFile && entry.name.endsWith(".deb")) {

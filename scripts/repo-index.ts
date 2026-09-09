@@ -64,7 +64,7 @@ const config = await loadRepositoryConfig(projectDir);
 const packages = new Map<string, PackageEntry>();
 for (const suite of config.suites) {
   for (const component of config.components) {
-    for (const architecture of config.architectures) {
+    for (const architecture of config.suiteArchitectures[suite]) {
       const entries = await readPackages(suite, component, architecture);
       for (const [name, entry] of entries) {
         let pkg = packages.get(name);

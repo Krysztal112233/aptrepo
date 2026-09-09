@@ -3,11 +3,20 @@
 import { basename, join } from "node:path";
 import { parse } from "npm:smol-toml@1.7.0";
 
-export const supportedArchitectures = ["amd64", "arm64"] as const;
+export const supportedArchitectures = ["amd64", "arm64", "riscv64"] as const;
 export type DebianArchitecture = typeof supportedArchitectures[number];
 export const supportedSuites = ["bookworm", "trixie", "forky"] as const;
 export type DebianSuite = typeof supportedSuites[number];
 export type ToolchainKind = "go" | "rust";
+
+export const defaultSuiteArchitectures: Record<
+  DebianSuite,
+  readonly DebianArchitecture[]
+> = {
+  bookworm: ["amd64", "arm64"],
+  trixie: ["amd64", "arm64", "riscv64"],
+  forky: ["amd64", "arm64", "riscv64"],
+};
 
 type Table = Record<string, unknown>;
 
@@ -18,7 +27,10 @@ export interface RepositoryConfig {
   signingKey: string;
   components: string[];
   suites: DebianSuite[];
+  /** Union of every suite's architectures, for web/index surfaces. */
   architectures: DebianArchitecture[];
+  /** Per-suite architecture matrix used by setup/build/reprepro. */
+  suiteArchitectures: Record<DebianSuite, DebianArchitecture[]>;
 }
 
 export interface PackageConfig {
@@ -94,25 +106,53 @@ export async function loadRepositoryConfig(
     }
   }
 
+  const suites = readSupportedStringArray(
+    document,
+    "suites",
+    supportedSuites,
+    configPath,
+  );
+  const suiteArchitectures = readSuiteArchitectures(
+    document,
+    suites,
+    configPath,
+  );
   return {
     configPath,
     origin: readSingleLineString(document, "origin", configPath),
     label: readSingleLineString(document, "label", configPath),
     signingKey: readSigningKey(document, "signing_key", configPath),
     components,
-    suites: readSupportedStringArray(
-      document,
-      "suites",
-      supportedSuites,
-      configPath,
-    ),
-    architectures: readSupportedStringArray(
-      document,
-      "architectures",
-      supportedArchitectures,
-      configPath,
-    ),
+    suites,
+    architectures: uniqueArchitectures(suites, suiteArchitectures),
+    suiteArchitectures,
   };
+}
+
+export function suiteArchitectures(
+  suite: DebianSuite,
+  matrix: Record<DebianSuite, readonly DebianArchitecture[]> =
+    defaultSuiteArchitectures,
+): DebianArchitecture[] {
+  return [...matrix[suite]];
+}
+
+export function uniqueArchitectures(
+  suites: readonly DebianSuite[],
+  matrix: Record<DebianSuite, readonly DebianArchitecture[]> =
+    defaultSuiteArchitectures,
+): DebianArchitecture[] {
+  const seen = new Set<DebianArchitecture>();
+  const architectures: DebianArchitecture[] = [];
+  for (const suite of suites) {
+    for (const architecture of matrix[suite]) {
+      if (!seen.has(architecture)) {
+        seen.add(architecture);
+        architectures.push(architecture);
+      }
+    }
+  }
+  return architectures;
 }
 
 export async function loadPackageConfig(
@@ -421,6 +461,39 @@ function readSupportedStringArray<const Value extends string>(
     }
   }
   return values as Value[];
+}
+
+function readSuiteArchitectures(
+  document: Table,
+  suites: DebianSuite[],
+  configPath: string,
+): Record<DebianSuite, DebianArchitecture[]> {
+  if ("architectures" in document) {
+    throw new Error(
+      `${configPath}: use suite_architectures instead of architectures`,
+    );
+  }
+  const table = readTable(document, "suite_architectures", configPath);
+  const unexpected = Object.keys(table).filter(
+    (suite) => !(suites as readonly string[]).includes(suite),
+  );
+  if (unexpected.length > 0) {
+    throw new Error(
+      `${configPath}: suite_architectures has suites not listed in suites: ${
+        unexpected.join(", ")
+      }`,
+    );
+  }
+  const suiteArchitectures = {} as Record<DebianSuite, DebianArchitecture[]>;
+  for (const suite of suites) {
+    suiteArchitectures[suite] = readSupportedStringArray(
+      table,
+      suite,
+      supportedArchitectures,
+      configPath,
+    );
+  }
+  return suiteArchitectures;
 }
 
 function readSingleLineString(

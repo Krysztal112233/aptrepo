@@ -13,3 +13,7 @@ sha256 = "63d339f0da5ab53635a56f2490a7984dfe12dfcff22ad749f63edaf590168445"
 [architectures.arm64]
 target = "linux-arm64"
 sha256 = "3450b45a3f9ee8568792736a5c5e70a1f2e9b36c35a8f74958c03e51d7d92bec"
+
+[architectures.riscv64]
+target = "linux-riscv64"
+sha256 = "62287667ee5e5f540f30fb9b7529a27fe582f22c6bfd726ece9b045f4c54ee61"

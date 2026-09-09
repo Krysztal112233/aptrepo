@@ -25,10 +25,12 @@ setup-sbuild suite="trixie" arch="all":
     ./scripts/setup-sbuild {{quote(suite)}} {{quote(arch)}}
 
 setup-sbuild-all arch="all":
+    #!/usr/bin/env bash
+    set -euo pipefail
     ./scripts/build-targets.ts --setup-all {{quote(arch)}}
-    just setup-sbuild bookworm {{quote(arch)}}
-    just setup-sbuild trixie {{quote(arch)}}
-    just setup-sbuild forky {{quote(arch)}}
+    for suite in $(./scripts/build-targets.ts --suites {{quote(arch)}}); do
+      just setup-sbuild "$suite" {{quote(arch)}}
+    done
 
 # ---- Package modules ----
 

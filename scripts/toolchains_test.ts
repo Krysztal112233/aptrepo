@@ -59,7 +59,7 @@ Deno.test("setup-go/setup-rust: serial target packaging plus native vendoring to
     const go = await loadGoToolchainConfig(root);
     const rust = await loadRustToolchainConfig(root);
     const checksums: Record<string, string> = {};
-    for (const arch of ["amd64", "arm64"] as const) {
+    for (const arch of ["amd64", "arm64", "riscv64"] as const) {
       checksums[`go${go.version}.${go.architectures[arch].target}.tar.gz`] =
         go.architectures[arch].sha256;
       for (const component of rust.components) {
@@ -162,7 +162,7 @@ else if (command === "sha256sum") {
           }).output();
           ok(result.success, new TextDecoder().decode(result.stderr));
           const order = selection === undefined
-            ? ["amd64", "arm64"]
+            ? ["amd64", "arm64", "riscv64"]
             : selection === host
             ? [host]
             : [foreign, host];

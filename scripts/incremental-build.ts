@@ -10,7 +10,7 @@ import {
   hostArchitecture,
   parseSelection,
   preflightBuild,
-  suites,
+  suitesForSelection,
 } from "./build-targets.ts";
 
 export function parseIncrementalArgs(args: string[]) {
@@ -22,7 +22,7 @@ export function parseIncrementalArgs(args: string[]) {
     else positional.push(arg);
   }
   if (positional.length > 2) {
-    throw new Error("Usage: [since] [all|amd64|arm64] [--dry-run]");
+    throw new Error("Usage: [since] [all|amd64|arm64|riscv64] [--dry-run]");
   }
   return {
     since: positional[0] ?? "24 hours ago",
@@ -136,7 +136,7 @@ async function main() {
   }
 
   await preflightBuild(
-    suites,
+    suitesForSelection(selection),
     selection,
     await hostArchitecture(),
     cacheHome(),

@@ -3,6 +3,7 @@
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  defaultSuiteArchitectures,
   loadPackageConfig,
   loadRepositoryConfig,
   loadToolchainConfig,
@@ -14,12 +15,29 @@ const packagesDir = join(projectDir, "packages");
 const packageDirs: string[] = [];
 const repositoryConfig = await loadRepositoryConfig(projectDir);
 
+for (const suite of repositoryConfig.suites) {
+  const configured = repositoryConfig.suiteArchitectures[suite].join(",");
+  const defaults = defaultSuiteArchitectures[suite].join(",");
+  if (configured !== defaults) {
+    throw new Error(
+      `${repositoryConfig.configPath}: suite_architectures.${suite}=[${configured}] ` +
+        `must match scripts/config.ts default [${defaults}]`,
+    );
+  }
+}
+
+const suiteMatrix = repositoryConfig.suites
+  .map((suite) =>
+    `${suite}=[${repositoryConfig.suiteArchitectures[suite].join(",")}]`
+  )
+  .join("; ");
 console.log(
   `${repositoryConfig.label}: origin=${repositoryConfig.origin}, ` +
     `signing_key=${repositoryConfig.signingKey}, ` +
     `components=${repositoryConfig.components.join(",")}, ` +
     `suites=${repositoryConfig.suites.join(",")}, ` +
-    `architectures=${repositoryConfig.architectures.join(",")}`,
+    `architectures=${repositoryConfig.architectures.join(",")}, ` +
+    `suite_architectures={${suiteMatrix}}`,
 );
 
 for await (const entry of Deno.readDir(packagesDir)) {

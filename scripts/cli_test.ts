@@ -67,8 +67,9 @@ Deno.test("Justfile and all nine package modules: default and explicit forwardin
   for (const name of names) {
     const defaultBuild = await command("just", ["--dry-run", `${name}::build`]);
     ok(defaultBuild.includes(`./packages/${name}/build.ts 'trixie' 'all'`));
-    for (const arch of ["amd64", "arm64"]) {
+    for (const arch of ["amd64", "arm64", "riscv64"]) {
       for (const suite of ["bookworm", "trixie", "forky"]) {
+        if (arch === "riscv64" && suite === "bookworm") continue;
         const build = await command("just", [
           "--dry-run",
           `${name}::build`,
@@ -89,12 +90,12 @@ Deno.test("Justfile and all nine package modules: default and explicit forwardin
         `${name}::build-all`,
         arch,
       ]);
-      for (const suite of ["bookworm", "trixie", "forky"]) {
-        ok(all.includes(`just ${name}::build ${suite} '${arch}'`));
-      }
+      ok(all.includes(`./scripts/build-targets.ts --build-all '${arch}'`));
+      ok(all.includes(`./scripts/build-targets.ts --suites '${arch}'`));
+      ok(all.includes(`just ${name}::build "$suite" '${arch}'`));
     }
   }
-  for (const arch of ["all", "amd64", "arm64"]) {
+  for (const arch of ["all", "amd64", "arm64", "riscv64"]) {
     const all = await command("just", ["--dry-run", "build-all", arch]);
     for (const name of names) {
       ok(all.includes(`just ${name}::build-all '${arch}'`));
@@ -126,6 +127,14 @@ Deno.test("Justfile and all nine package modules: default and explicit forwardin
         .includes(`./scripts/setup-sbuild 'trixie' '${arch}'`),
     );
   }
+  const setupAll = await command("just", [
+    "--dry-run",
+    "setup-sbuild-all",
+    "riscv64",
+  ]);
+  ok(setupAll.includes(`./scripts/build-targets.ts --setup-all 'riscv64'`));
+  ok(setupAll.includes(`./scripts/build-targets.ts --suites 'riscv64'`));
+  ok(setupAll.includes(`just setup-sbuild "$suite" 'riscv64'`));
   // Shell interpolation must not turn malformed input into commands.
   const malformed = await command("just", [
     "--dry-run",
@@ -138,7 +147,7 @@ Deno.test("Justfile and all nine package modules: default and explicit forwardin
     const args of [["all", "amd64"], ["trixie", "armhf"], [
       "--build-all",
       "amd64",
-    ]]
+    ], ["bookworm", "riscv64"]]
   ) {
     const invalid = await new Deno.Command("just", {
       args: ["d2::build", ...args],
@@ -148,7 +157,10 @@ Deno.test("Justfile and all nine package modules: default and explicit forwardin
     }).output();
     ok(!invalid.success);
     const output = new TextDecoder().decode(invalid.stderr);
-    ok(output.includes("Unsupported"), output);
+    ok(
+      output.includes("Unsupported") || output.includes("not supported"),
+      output,
+    );
     ok(
       !output.includes("just setup-go"),
       "invalid suite/arch must fail before setup",
@@ -186,7 +198,7 @@ Deno.test("incremental-build: real entrypoint forwards targets serially, dry-run
       DENO_DIR: denoDir,
       XDG_CACHE_HOME: join(root, "cache"),
     };
-    for (const arch of ["all", "amd64", "arm64"]) {
+    for (const arch of ["all", "amd64", "arm64", "riscv64"]) {
       const output = await command(
         Deno.execPath(),
         [
@@ -273,7 +285,11 @@ async function withPreflightEntrypoints(
     const cache = join(root, "cache");
     await Deno.mkdir(join(cache, "sbuild"), { recursive: true });
     for (const suite of ["bookworm", "trixie", "forky"]) {
-      for (const arch of ["amd64", "arm64"]) {
+      for (
+        const arch of suite === "bookworm"
+          ? ["amd64", "arm64"]
+          : ["amd64", "arm64", "riscv64"]
+      ) {
         await Deno.writeTextFile(
           join(cache, "sbuild", `${suite}-${arch}.tar.zst`),
           "fixture only, never open as a chroot",
@@ -303,8 +319,18 @@ async function withPreflightEntrypoints(
     }
     await test({
       async invoke(entrypoint, args, { host = "amd64", failure } = {}) {
-        const target = host === "amd64" ? "arm64" : "amd64";
-        const emulator = host === "amd64" ? "qemu-aarch64" : "qemu-x86_64";
+        const foreigners = host === "amd64"
+          ? ["arm64", "riscv64"]
+          : ["amd64", "riscv64"];
+        const emulatorPaths = host === "amd64"
+          ? [
+            "/proc/sys/fs/binfmt_misc/qemu-aarch64",
+            "/proc/sys/fs/binfmt_misc/qemu-riscv64",
+          ]
+          : [
+            "/proc/sys/fs/binfmt_misc/qemu-x86_64",
+            "/proc/sys/fs/binfmt_misc/qemu-riscv64",
+          ];
         await Deno.writeTextFile(log, "");
         await install(
           "dpkg",
@@ -318,7 +344,7 @@ case "$1" in
 /proc/sys/fs/binfmt_misc/status)
   ${failure === "cat-failure" ? "exit 93" : ":"}
   echo ${failure === "disabled-status" ? "disabled" : "enabled"};;
-/proc/sys/fs/binfmt_misc/${emulator})
+${emulatorPaths.join("|")})
   echo ${failure === "disabled-registration" ? "disabled" : "enabled"}
   echo 'flags: ${failure === "missing-F" ? "PO" : "POF"}';;
 *) exit 94;;
@@ -326,7 +352,8 @@ esac`,
         );
         await install(
           "arch-test",
-          `test "$#" = 1\ntest "$1" = ${target}
+          `test "$#" = 1
+case "$1" in ${foreigners.join("|")}) ;; *) exit 96;; esac
 printf 'arch-test %s\\n' "$1" >> "$PROBE_LOG"
 ${failure === "arch-test-failure" ? "exit 95" : "echo ok"}`,
         );
@@ -368,11 +395,22 @@ ${failure === "arch-test-failure" ? "exit 95" : "echo ok"}`,
   }
 }
 
-const arm64Probes = [
-  "cat /proc/sys/fs/binfmt_misc/status",
-  "cat /proc/sys/fs/binfmt_misc/qemu-aarch64",
-  "arch-test arm64",
-];
+function foreignProbes(host: "amd64" | "arm64") {
+  const targets = host === "amd64"
+    ? [
+      ["qemu-aarch64", "arm64"],
+      ["qemu-riscv64", "riscv64"],
+    ] as const
+    : [
+      ["qemu-x86_64", "amd64"],
+      ["qemu-riscv64", "riscv64"],
+    ] as const;
+  return targets.flatMap(([emulator, arch]) => [
+    "cat /proc/sys/fs/binfmt_misc/status",
+    `cat /proc/sys/fs/binfmt_misc/${emulator}`,
+    `arch-test ${arch}`,
+  ]);
+}
 
 Deno.test("build-targets: actual restricted shebang probes both mappings and bypasses native", async () => {
   await withPreflightEntrypoints(async ({ invoke }) => {
@@ -386,11 +424,23 @@ Deno.test("build-targets: actual restricted shebang probes both mappings and byp
       ok(foreign.success, foreign.output);
       deepStrictEqual(foreign.output.trim(), target);
       deepStrictEqual(foreign.calls, [
-        arm64Probes[0],
+        "cat /proc/sys/fs/binfmt_misc/status",
         `cat /proc/sys/fs/binfmt_misc/${
           host === "amd64" ? "qemu-aarch64" : "qemu-x86_64"
         }`,
         `arch-test ${target}`,
+      ]);
+      const riscv = await invoke(
+        "scripts/build-targets.ts",
+        ["--setup", "trixie", "riscv64"],
+        { host },
+      );
+      ok(riscv.success, riscv.output);
+      deepStrictEqual(riscv.output.trim(), "riscv64");
+      deepStrictEqual(riscv.calls, [
+        "cat /proc/sys/fs/binfmt_misc/status",
+        "cat /proc/sys/fs/binfmt_misc/qemu-riscv64",
+        "arch-test riscv64",
       ]);
       const native = await invoke(
         "scripts/build-targets.ts",
@@ -411,7 +461,7 @@ Deno.test("incremental-build: actual restricted importer preflights default all 
     ]);
     ok(incremental.success, incremental.output);
     deepStrictEqual(incremental.calls, [
-      ...arm64Probes,
+      ...foreignProbes("amd64"),
       ...[...names].sort().map((name) => `just ${name}::build-all all`),
     ]);
   });
@@ -424,7 +474,7 @@ Deno.test("d2: actual restricted importer preflights default all before toolchai
     ok(pkg.output.includes("Missing Go build toolchain"), pkg.output);
     ok(!pkg.output.includes("Cannot execute"), pkg.output);
     ok(!pkg.output.includes("NotCapable"), pkg.output);
-    deepStrictEqual(pkg.calls, arm64Probes);
+    deepStrictEqual(pkg.calls, foreignProbes("amd64"));
   });
 });
 
@@ -438,6 +488,11 @@ Deno.test("build-targets, incremental-build, d2 and setup-sbuild: real preflight
       "missing-cat",
       "missing-arch-test",
       "arch-test-failure",
+    ];
+    const firstForeignProbes = [
+      "cat /proc/sys/fs/binfmt_misc/status",
+      "cat /proc/sys/fs/binfmt_misc/qemu-aarch64",
+      "arch-test arm64",
     ];
     for (const failure of failures) {
       for (
@@ -469,7 +524,11 @@ Deno.test("build-targets, incremental-build, d2 and setup-sbuild: real preflight
           : 2;
         // Exact trace also rules out arch-test on invalid registration, Just
         // dispatch (including native target 1), and any shell setup work.
-        deepStrictEqual(result.calls, arm64Probes.slice(0, count), context);
+        deepStrictEqual(
+          result.calls,
+          firstForeignProbes.slice(0, count),
+          context,
+        );
       }
     }
   });

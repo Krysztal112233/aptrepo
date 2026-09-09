@@ -79,7 +79,7 @@ toolchain = "${kind}"
           `bin/${kind === "go" ? "go" : "cargo"}`,
         );
         await touch(vendor);
-        for (const arch of ["amd64", "arm64"] as const) {
+        for (const arch of ["amd64", "arm64", "riscv64"] as const) {
           await touch(debPath(arch));
           await touch(join(cache, `sbuild/trixie-${arch}.tar.zst`));
         }
@@ -144,7 +144,10 @@ toolchain = "${kind}"
             } else if (command === "sbuild") {
               ok(!building, "sbuild calls must not overlap");
               building = true;
-              const arch = args.includes("--arch=amd64") ? "amd64" : "arm64";
+              const archArg = args.find((arg) => arg.startsWith("--arch="));
+              const arch = archArg?.slice(
+                "--arch=".length,
+              ) as DebianArchitecture;
               events.push(arch);
               ok(
                 args.includes(
@@ -174,15 +177,15 @@ toolchain = "${kind}"
           },
         };
         const moduleUrl = pathToFileURL(join(packageDir, "build.ts")).href;
-        // Missing target 2 must stop before any source preparation/build.
-        await Deno.remove(join(cache, "sbuild/trixie-arm64.tar.zst"));
+        // Missing later target must stop before any source preparation/build.
+        await Deno.remove(join(cache, "sbuild/trixie-riscv64.tar.zst"));
         await rejects(
           () => buildPackage(moduleUrl, undefined, undefined, runtime),
-          /setup-sbuild trixie arm64/,
+          /setup-sbuild trixie riscv64/,
         );
         deepStrictEqual(events, ["preflight"]);
         events.length = 0;
-        await touch(join(cache, "sbuild/trixie-arm64.tar.zst"));
+        await touch(join(cache, "sbuild/trixie-riscv64.tar.zst"));
         await buildPackage(moduleUrl, undefined, undefined, runtime);
         deepStrictEqual(events, [
           "preflight",
@@ -190,13 +193,15 @@ toolchain = "${kind}"
           "amd64",
           "source",
           "arm64",
+          "source",
+          "riscv64",
         ]);
         deepStrictEqual(
           vendors,
           [vendor],
-          "host-vendored orig is reused for target 2",
+          "host-vendored orig is reused across serial targets",
         );
-        for (const arch of ["amd64", "arm64"]) {
+        for (const arch of ["amd64", "arm64", "riscv64"]) {
           for (const extension of ["deb", "changes", "buildinfo"]) {
             ok(
               await exists(

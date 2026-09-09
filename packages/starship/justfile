@@ -6,7 +6,9 @@ build suite="trixie" arch="all":
     ./packages/starship/build.ts {{quote(suite)}} {{quote(arch)}}
 
 build-all arch="all":
+    #!/usr/bin/env bash
+    set -euo pipefail
     ./scripts/build-targets.ts --build-all {{quote(arch)}}
-    @just starship::build bookworm {{quote(arch)}}
-    @just starship::build trixie {{quote(arch)}}
-    @just starship::build forky {{quote(arch)}}
+    for suite in $(./scripts/build-targets.ts --suites {{quote(arch)}}); do
+      just starship::build "$suite" {{quote(arch)}}
+    done

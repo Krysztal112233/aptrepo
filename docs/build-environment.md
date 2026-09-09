@@ -5,7 +5,7 @@ Use a Debian `amd64` or `arm64` host with Deno 2, Just (at least 1.58), `curl`,
 (`build-essential`, `devscripts`, `debhelper`, `dpkg-dev`, `xz-utils`, `zstd`).
 Unprivileged user namespaces and subordinate UID/GID ranges must be configured
 for the build user. No privileged package installation is performed by the setup
-scripts.
+scripts. riscv64 is a **build target** only; it is not a supported build host.
 
 ```sh
 just check-required
@@ -27,27 +27,48 @@ build suite is not the host release. `binfmt-support`/`update-binfmts` is not
 required when systemd manages the registrations. GNU `time` is optional for
 measurements.
 
-On amd64, check `arch-test arm64` and `/proc/sys/fs/binfmt_misc/qemu-aarch64`:
-binfmt must be enabled and the registration must be enabled with the **F** flag,
-which keeps the interpreter available inside chroots. On arm64, the analogous
-foreign target is amd64 (`qemu-x86_64`). Preflight checks registration plus
-`arch-test`; it cannot guarantee all dynamic libraries or package-specific
-behavior. A native-only selection does not require QEMU or `arch-test`.
+Foreign targets need matching binfmt registrations with the **F** flag, which
+keeps the interpreter available inside chroots:
+
+- amd64 host: `arch-test arm64` / `qemu-aarch64`, and for riscv64 builds
+  `arch-test riscv64` / `qemu-riscv64`
+- arm64 host: `arch-test amd64` / `qemu-x86_64`, plus the same riscv64 pair when
+  building riscv64
+
+Preflight checks registration plus `arch-test`; it cannot guarantee all dynamic
+libraries or package-specific behavior. A native-only selection does not require
+QEMU or `arch-test`.
 
 ## Select suites and architectures
 
-The default architecture selection is **all**, meaning **amd64 then arm64,
-serially**, regardless of host architecture. Existing suite positions are
-unchanged; append `all`, `amd64`, or `arm64` to select architectures explicitly.
+Architecture support is **suite-specific** (`repository.toml` →
+`suite_architectures`):
+
+| Suite | Architectures |
+| --- | --- |
+| bookworm | amd64, arm64 |
+| trixie | amd64, arm64, riscv64 |
+| forky | amd64, arm64, riscv64 |
+
+The default architecture selection is **all**, meaning every architecture in
+that suite's matrix, serially (`amd64` then `arm64`, then `riscv64` when the
+suite supports it). Explicit `all`, `amd64`, `arm64`, or `riscv64` still works.
+Multi-suite commands (`setup-sbuild-all`, `build-all`, incremental builds) skip
+suites that do not support the selected architecture, so
+`just setup-sbuild-all riscv64` only touches trixie and forky. A single-suite
+request for an unsupported pair (for example `just setup-sbuild bookworm
+riscv64`) fails explicitly.
 
 ```sh
-just setup-sbuild trixie          # both architectures for trixie
+just setup-sbuild trixie          # amd64, arm64, and riscv64 for trixie
 just setup-sbuild trixie arm64    # only the missing foreign chroot, for example
-just setup-sbuild-all             # both architectures for all three suites
+just setup-sbuild trixie riscv64  # riscv64-only for trixie
+just setup-sbuild-all             # each suite's full matrix
 just setup-sbuild-all amd64       # native-only on an amd64 host
-just setup-toolchains             # both Go and Rust, both architectures
+just setup-sbuild-all riscv64     # trixie + forky only
+just setup-toolchains             # Go and Rust for the architecture union
 just setup-go arm64               # arm64 package AND host-native vendoring Go
-just setup-rust arm64             # arm64 package AND host-native vendoring Cargo
+just setup-rust riscv64           # riscv64 package AND host-native vendoring Cargo
 ```
 
 The same defaults apply directly:
@@ -71,8 +92,8 @@ DEBIAN_MIRROR=https://deb.debian.org/debian just setup-sbuild trixie arm64
 
 Builds are **emulated native**, using sbuild-managed unshare chroots and QEMU
 user-mode/binfmt for foreign execution, not true cross compilation or a VM. An
-arm64 build uses an arm64 chroot and compiler package with
-`sbuild --arch=arm64`. Source preparation/vendoring uses the host-native
+arm64 or riscv64 build uses a matching chroot and compiler package with
+`sbuild --arch=<arch>`. Source preparation/vendoring uses the host-native
 Go/Cargo executable. Foreign compiler archives are packaged/extracted without
 executing them on the host. The existing Debian rules can execute built target
 programs for completions, manpages and tests through binfmt.
@@ -98,6 +119,6 @@ commands against shared caches. Distinct immutable Rust component downloads may
 run in parallel within a single setup.
 
 Emulation adds workload-dependent cost; no measured slowdown or all-package
-compatibility is claimed here. Default dual-architecture builds add substantial
+compatibility is claimed here. Default multi-architecture builds add substantial
 work, disk usage and temporary-space demand. Check available RAM, cache disk and
 `/tmp` space before starting; select one target/suite for bounded evaluation.

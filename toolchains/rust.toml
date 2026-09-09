@@ -22,3 +22,11 @@ target = "aarch64-unknown-linux-gnu"
 rustc = "00590657f2356d7163ca5ef295283523974c340fa21bb94b420ce794f29b358c"
 cargo = "5784379d73ac881d15a9e67eed2882cd58c747c276221c23cdf9aff37e015ff6"
 rust-std = "a36f7ac98af20ef0ba6368aace0345efabbebaef7962eba99f47190fd256162d"
+
+[architectures.riscv64]
+target = "riscv64gc-unknown-linux-gnu"
+
+[architectures.riscv64.sha256]
+rustc = "2f76a343190d8ffbe6c44666fdab32b6a6696a3e1176f6d84222b6e6221a382c"
+cargo = "9fcbf7ebb55a3eefdc2145a29b1cc797380edee0cee1163742c5ee06c4622347"
+rust-std = "68ce716d38bcc15c6fe3686bc7133f5adbadd28f5f5a8a73ef1172b4f60149fc"
