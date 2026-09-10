@@ -73,6 +73,24 @@ interface BuildAdapter {
   prepareSource(environment: SourceEnvironment): Promise<string>;
 }
 
+/**
+ * Injected into every Rust `debian/rules` as `{{RUST_BUILD_TUNING}}`; the
+ * comment inside the snippet explains why foreign (emulated) builds need their
+ * own LTO profile. Native builds keep the upstream release profile.
+ */
+const rustBuildTuning =
+  `# Emulated (QEMU user-mode) builds run on a much tighter memory budget than
+# native ones, where the upstream fat-LTO release profile can be OOM-killed
+# while linking the main binaries. Thin LTO avoids that peak, and the job cap
+# keeps the emulated compile phase from scaling with the host CPU count (cargo
+# does not honour DEB_BUILD_OPTIONS=parallel). Native builds are unchanged.
+include /usr/share/dpkg/architecture.mk
+
+ifneq ($(DEB_HOST_ARCH),$(DEB_BUILD_ARCH))
+export CARGO_PROFILE_RELEASE_LTO := thin
+export CARGO_BUILD_JOBS := 4
+endif`;
+
 export async function buildPackage(
   packageModuleUrl: string,
   suite = "trixie",
@@ -332,6 +350,7 @@ async function createRustAdapter(
     },
     rulesReplacements: {
       RUST_INSTALL_PREFIX: config.installPrefix,
+      RUST_BUILD_TUNING: rustBuildTuning,
     },
     prepareSource(sourceEnvironment) {
       return prepareRustSource(

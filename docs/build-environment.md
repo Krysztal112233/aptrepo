@@ -98,6 +98,15 @@ Go/Cargo executable. Foreign compiler archives are packaged/extracted without
 executing them on the host. The existing Debian rules can execute built target
 programs for completions, manpages and tests through binfmt.
 
+Rust packages build with the upstream release profile, which enables fat LTO
+(`uv`, `zellij`, `starship` and `sccache`) and gives the final link of the main
+binaries a multi-GiB peak. Under emulation that peak can exhaust the host's
+memory and the link is killed by the OOM killer, so the shared rules tuning
+switches foreign builds (`DEB_HOST_ARCH` ≠ `DEB_BUILD_ARCH`) to thin LTO and a
+bounded `CARGO_BUILD_JOBS`, while native builds keep fat LTO. Foreign artifacts
+are therefore not byte-identical to native ones, and sizing a host still needs
+headroom for the emulated compile phase, not just for the link.
+
 - Chroots: `${XDG_CACHE_HOME:-$HOME/.cache}/sbuild/<suite>-<arch>.tar.zst`.
 - Toolchain packages: `build/toolchains/*_<arch>.deb`, with config fingerprints.
 - Toolchain downloads/extracted tools:

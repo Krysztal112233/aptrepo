@@ -5,6 +5,8 @@ export CARGO_HOME := $(CURDIR)/debian/.cargo-home
 export CARGO_NET_OFFLINE := true
 export CARGO_TARGET_DIR := $(CURDIR)/target
 
+{{RUST_BUILD_TUNING}}
+
 %:
 	dh $@
 

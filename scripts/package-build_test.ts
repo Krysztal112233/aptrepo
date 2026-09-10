@@ -50,7 +50,9 @@ toolchain = "${kind}"
         await touch(join(packageDir, "debian/control.in"), "Source: fixture\n");
         await touch(
           join(packageDir, "debian/rules.in"),
-          "#!/usr/bin/make -f\n",
+          kind === "rust"
+            ? "#!/usr/bin/make -f\n\n{{RUST_BUILD_TUNING}}\n"
+            : "#!/usr/bin/make -f\n",
         );
         await touch(
           join(packageDir, "debian/changelog"),
@@ -140,6 +142,28 @@ toolchain = "${kind}"
                 "--no-sign",
                 "--no-check-builddeps",
               ]);
+              ok(cwd, "dpkg-buildpackage runs in the source directory");
+              const rules = await Deno.readTextFile(join(cwd, "debian/rules"));
+              ok(!rules.includes("{{"), "template values must be resolved");
+              if (kind === "rust") {
+                ok(
+                  rules.includes("include /usr/share/dpkg/architecture.mk"),
+                  "rust rules must know the build and host architecture",
+                );
+                ok(
+                  rules.includes(
+                    "ifneq ($(DEB_HOST_ARCH),$(DEB_BUILD_ARCH))",
+                  ),
+                  "rust emulated-build tuning must be keyed on the host arch",
+                );
+                ok(rules.includes("export CARGO_PROFILE_RELEASE_LTO := thin"));
+                ok(rules.includes("export CARGO_BUILD_JOBS := 4"));
+              } else {
+                ok(
+                  !rules.includes("CARGO_PROFILE_RELEASE_LTO"),
+                  "go rules must not receive rust tuning",
+                );
+              }
               events.push("source");
             } else if (command === "sbuild") {
               ok(!building, "sbuild calls must not overlap");
