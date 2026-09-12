@@ -16,12 +16,17 @@ const packageDirs: string[] = [];
 const repositoryConfig = await loadRepositoryConfig(projectDir);
 
 for (const suite of repositoryConfig.suites) {
-  const configured = repositoryConfig.suiteArchitectures[suite].join(",");
-  const defaults = defaultSuiteArchitectures[suite].join(",");
-  if (configured !== defaults) {
+  const configured = repositoryConfig.suiteArchitectures[suite];
+  const missing = defaultSuiteArchitectures[suite].filter(
+    (arch) => !configured.includes(arch),
+  );
+  if (missing.length > 0) {
     throw new Error(
-      `${repositoryConfig.configPath}: suite_architectures.${suite}=[${configured}] ` +
-        `must match scripts/config.ts default [${defaults}]`,
+      `${repositoryConfig.configPath}: suite_architectures.${suite}=[${
+        configured.join(",")
+      }] ` +
+        `must include every scripts/config.ts build-matrix architecture ` +
+        `(missing: ${missing.join(",")})`,
     );
   }
 }

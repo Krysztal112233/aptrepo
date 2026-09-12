@@ -198,7 +198,7 @@ Deno.test("incremental-build: real entrypoint forwards targets serially, dry-run
       DENO_DIR: denoDir,
       XDG_CACHE_HOME: join(root, "cache"),
     };
-    for (const arch of ["all", "amd64", "arm64", "riscv64"]) {
+    for (const arch of ["all", "amd64"]) {
       const output = await command(
         Deno.execPath(),
         [
@@ -395,62 +395,47 @@ ${failure === "arch-test-failure" ? "exit 95" : "echo ok"}`,
   }
 }
 
-function foreignProbes(host: "amd64" | "arm64") {
-  const targets = host === "amd64"
-    ? [
-      ["qemu-aarch64", "arm64"],
-      ["qemu-riscv64", "riscv64"],
-    ] as const
-    : [
-      ["qemu-x86_64", "amd64"],
-      ["qemu-riscv64", "riscv64"],
-    ] as const;
-  return targets.flatMap(([emulator, arch]) => [
-    "cat /proc/sys/fs/binfmt_misc/status",
-    `cat /proc/sys/fs/binfmt_misc/${emulator}`,
-    `arch-test ${arch}`,
-  ]);
-}
-
-Deno.test("build-targets: actual restricted shebang probes both mappings and bypasses native", async () => {
+Deno.test("build-targets: actual restricted shebang rejects foreign selections and bypasses native", async () => {
   await withPreflightEntrypoints(async ({ invoke }) => {
     for (const host of ["amd64", "arm64"] as const) {
-      const target = host === "amd64" ? "arm64" : "amd64";
-      const foreign = await invoke(
-        "scripts/build-targets.ts",
-        ["--setup", "trixie", target],
-        { host },
-      );
-      ok(foreign.success, foreign.output);
-      deepStrictEqual(foreign.output.trim(), target);
-      deepStrictEqual(foreign.calls, [
-        "cat /proc/sys/fs/binfmt_misc/status",
-        `cat /proc/sys/fs/binfmt_misc/${
-          host === "amd64" ? "qemu-aarch64" : "qemu-x86_64"
-        }`,
-        `arch-test ${target}`,
-      ]);
-      const riscv = await invoke(
-        "scripts/build-targets.ts",
-        ["--setup", "trixie", "riscv64"],
-        { host },
-      );
-      ok(riscv.success, riscv.output);
-      deepStrictEqual(riscv.output.trim(), "riscv64");
-      deepStrictEqual(riscv.calls, [
-        "cat /proc/sys/fs/binfmt_misc/status",
-        "cat /proc/sys/fs/binfmt_misc/qemu-riscv64",
-        "arch-test riscv64",
-      ]);
-      const native = await invoke(
-        "scripts/build-targets.ts",
-        ["--setup", "trixie", host],
-        { host, failure: "missing-cat" },
-      );
-      ok(native.success, native.output);
-      deepStrictEqual(native.output.trim(), host);
-      deepStrictEqual(native.calls, []);
+      // arm64 and riscv64 are outside the amd64-only build matrix on any
+      // host and must be rejected before any binfmt probing.
+      for (const target of ["arm64", "riscv64"] as const) {
+        const foreign = await invoke(
+          "scripts/build-targets.ts",
+          ["--setup", "trixie", target],
+          { host },
+        );
+        ok(!foreign.success, foreign.output);
+        ok(
+          foreign.output.includes("not supported"),
+          foreign.output,
+        );
+        deepStrictEqual(foreign.calls, []);
+      }
     }
+    // amd64 is the only build-matrix architecture: native on an amd64 host
+    // (no binfmt probes) and a foreign cross-selection on an arm64 host.
+    const native = await invoke(
+      "scripts/build-targets.ts",
+      ["--setup", "trixie", "amd64"],
+      { host: "amd64", failure: "missing-cat" },
+    );
+    ok(native.success, native.output);
+    deepStrictEqual(native.output.trim(), "amd64");
+    deepStrictEqual(native.calls, []);
+    const cross = await invoke(
+      "scripts/build-targets.ts",
+      ["--setup", "trixie", "amd64"],
+      { host: "arm64" },
+    );
+    ok(cross.success, cross.output);
+    deepStrictEqual(cross.output.trim(), "amd64");
+    deepStrictEqual(cross.calls, [
+      "cat /proc/sys/fs/binfmt_misc/status",
+      "cat /proc/sys/fs/binfmt_misc/qemu-x86_64",
+      "arch-test amd64",
+    ]);
   });
 });
 
@@ -461,7 +446,6 @@ Deno.test("incremental-build: actual restricted importer preflights default all 
     ]);
     ok(incremental.success, incremental.output);
     deepStrictEqual(incremental.calls, [
-      ...foreignProbes("amd64"),
       ...[...names].sort().map((name) => `just ${name}::build-all all`),
     ]);
   });
@@ -474,11 +458,11 @@ Deno.test("d2: actual restricted importer preflights default all before toolchai
     ok(pkg.output.includes("Missing Go build toolchain"), pkg.output);
     ok(!pkg.output.includes("Cannot execute"), pkg.output);
     ok(!pkg.output.includes("NotCapable"), pkg.output);
-    deepStrictEqual(pkg.calls, foreignProbes("amd64"));
+    deepStrictEqual(pkg.calls, []);
   });
 });
 
-Deno.test("build-targets, incremental-build, d2 and setup-sbuild: real preflight fails closed", async () => {
+Deno.test("build-targets, incremental-build, d2 and setup-sbuild: foreign selections fail closed", async () => {
   await withPreflightEntrypoints(async ({ invoke }) => {
     const failures: ProbeFailure[] = [
       "disabled-status",
@@ -489,46 +473,24 @@ Deno.test("build-targets, incremental-build, d2 and setup-sbuild: real preflight
       "missing-arch-test",
       "arch-test-failure",
     ];
-    const firstForeignProbes = [
-      "cat /proc/sys/fs/binfmt_misc/status",
-      "cat /proc/sys/fs/binfmt_misc/qemu-aarch64",
-      "arch-test arm64",
-    ];
     for (const failure of failures) {
+      // Every probe is broken, but the amd64-only build matrix must reject
+      // foreign selections before any of them run.
       for (
         const [entrypoint, args] of [
-          ["scripts/build-targets.ts", ["--setup", "trixie", "all"]],
-          ["scripts/incremental-build.ts", ["yesterday"]],
-          ["packages/d2/build.ts", []],
-          ["scripts/setup-sbuild", ["trixie", "all"]],
+          ["scripts/build-targets.ts", ["--setup", "trixie", "arm64"]],
+          ["scripts/incremental-build.ts", ["yesterday", "arm64"]],
+          ["packages/d2/build.ts", ["trixie", "arm64"]],
+          ["scripts/setup-sbuild", ["trixie", "arm64"]],
         ] as const
       ) {
         const result = await invoke(entrypoint, [...args], { failure });
         const context = `${entrypoint} ${failure}: ${result.output}`;
         ok(!result.success, context);
-        ok(result.output.includes("Cannot execute arm64 in sbuild"), context);
-        ok(
-          result.output.includes(
-            "with the F flag, then check: arch-test arm64",
-          ),
-          context,
-        );
+        ok(/architecture arm64/i.test(result.output), context);
         ok(!result.output.includes("Missing Go build toolchain"), context);
         ok(!result.output.includes("NotCapable"), context);
-        const count = failure === "missing-cat"
-          ? 0
-          : failure === "cat-failure"
-          ? 1
-          : failure === "arch-test-failure"
-          ? 3
-          : 2;
-        // Exact trace also rules out arch-test on invalid registration, Just
-        // dispatch (including native target 1), and any shell setup work.
-        deepStrictEqual(
-          result.calls,
-          firstForeignProbes.slice(0, count),
-          context,
-        );
+        deepStrictEqual(result.calls, [], context);
       }
     }
   });

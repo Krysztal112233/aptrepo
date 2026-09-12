@@ -13,8 +13,10 @@ just check-config
 ```
 
 `check-required` checks the common commands; foreign execution is checked
-separately by build/chroot setup preflight. On a current Debian forky/sid host,
-foreign builds additionally require these host packages (administrator action):
+separately by build/chroot setup preflight. The build matrix is amd64-only by
+default, so QEMU is not needed. If foreign architectures are re-enabled in
+`scripts/config.ts`, foreign builds on a current Debian forky/sid host
+additionally require these host packages (administrator action):
 
 ```sh
 sudo apt install qemu-user qemu-user-binfmt arch-test
@@ -36,53 +38,48 @@ keeps the interpreter available inside chroots:
   building riscv64
 
 Preflight checks registration plus `arch-test`; it cannot guarantee all dynamic
-libraries or package-specific behavior. A native-only selection does not require
-QEMU or `arch-test`.
+libraries or package-specific behavior. The amd64-only build matrix does not
+require QEMU or `arch-test`; a native-only selection does not either when
+foreign architectures are re-enabled.
 
 ## Select suites and architectures
 
-Architecture support is **suite-specific** (`repository.toml` →
-`suite_architectures`):
+Architecture support is split in two. The **build matrix** in
+`scripts/config.ts` is **amd64-only**: the default architecture selection
+**all** means amd64 for every suite, and foreign-architecture build selections
+are rejected before toolchain setup. The **published** matrix
+(`repository.toml` → `suite_architectures`) stays wider so previously built
+foreign artifacts remain listed by reprepro and the web index:
 
-| Suite | Architectures |
+| Suite | Published architectures |
 | --- | --- |
 | bookworm | amd64, arm64 |
 | trixie | amd64, arm64, riscv64 |
 | forky | amd64, arm64, riscv64 |
 
-The default architecture selection is **all**, meaning every architecture in
-that suite's matrix, serially (`amd64` then `arm64`, then `riscv64` when the
-suite supports it). Explicit `all`, `amd64`, `arm64`, or `riscv64` still works.
-Multi-suite commands (`setup-sbuild-all`, `build-all`, incremental builds) skip
-suites that do not support the selected architecture, so
-`just setup-sbuild-all riscv64` only touches trixie and forky. A single-suite
-request for an unsupported pair (for example `just setup-sbuild bookworm
-riscv64`) fails explicitly.
-
 ```sh
-just setup-sbuild trixie          # amd64, arm64, and riscv64 for trixie
-just setup-sbuild trixie arm64    # only the missing foreign chroot, for example
-just setup-sbuild trixie riscv64  # riscv64-only for trixie
-just setup-sbuild-all             # each suite's full matrix
-just setup-sbuild-all amd64       # native-only on an amd64 host
-just setup-sbuild-all riscv64     # trixie + forky only
-just setup-toolchains             # Go and Rust for the architecture union
-just setup-go arm64               # arm64 package AND host-native vendoring Go
-just setup-rust riscv64           # riscv64 package AND host-native vendoring Cargo
+just setup-sbuild trixie          # amd64 chroot for trixie
+just setup-sbuild-all             # each suite's amd64 chroot
+just setup-sbuild-all amd64       # same, native-only
+just setup-toolchains             # Go and Rust for the build matrix
+just setup-go arm64               # optional: foreign toolchain package
+just setup-rust arm64             # (foreign package AND host-native vendoring)
 ```
 
 The same defaults apply directly:
 
 ```sh
-./scripts/setup-sbuild trixie arm64
-./scripts/setup-go.ts arm64
-./scripts/setup-rust.ts arm64
+./scripts/setup-sbuild trixie amd64
+./scripts/setup-go.ts amd64
+./scripts/setup-rust.ts amd64
 ```
 
 Chroot setup validates the entire selection and foreign execution **before**
 creating anything; it does not require the chroots it is about to create. It
 replaces the selected archives on success. To avoid recreating existing chroots,
-select only the missing suite/architecture. The mirror remains configurable:
+select only the missing suite/architecture. The amd64-only build matrix gates
+setup as well: foreign-architecture selections are rejected before any
+directory is created. The mirror remains configurable:
 
 ```sh
 DEBIAN_MIRROR=https://deb.debian.org/debian just setup-sbuild trixie arm64
@@ -91,12 +88,14 @@ DEBIAN_MIRROR=https://deb.debian.org/debian just setup-sbuild trixie arm64
 ## Design and caches
 
 Builds are **emulated native**, using sbuild-managed unshare chroots and QEMU
-user-mode/binfmt for foreign execution, not true cross compilation or a VM. An
-arm64 or riscv64 build uses a matching chroot and compiler package with
-`sbuild --arch=<arch>`. Source preparation/vendoring uses the host-native
-Go/Cargo executable. Foreign compiler archives are packaged/extracted without
-executing them on the host. The existing Debian rules can execute built target
-programs for completions, manpages and tests through binfmt.
+user-mode/binfmt for foreign execution, not true cross compilation or a VM.
+This machinery is dormant while the build matrix is amd64-only; when a foreign
+architecture is enabled in `scripts/config.ts`, that build uses a matching
+chroot and compiler package with `sbuild --arch=<arch>`. Source
+preparation/vendoring uses the host-native Go/Cargo executable. Foreign
+compiler archives are packaged/extracted without executing them on the host.
+The existing Debian rules can execute built target programs for completions,
+manpages and tests through binfmt.
 
 Rust packages build with the upstream release profile, which enables fat LTO
 (`uv`, `zellij`, `starship` and `sccache`) and gives the final link of the main
@@ -128,6 +127,6 @@ commands against shared caches. Distinct immutable Rust component downloads may
 run in parallel within a single setup.
 
 Emulation adds workload-dependent cost; no measured slowdown or all-package
-compatibility is claimed here. Default multi-architecture builds add substantial
-work, disk usage and temporary-space demand. Check available RAM, cache disk and
-`/tmp` space before starting; select one target/suite for bounded evaluation.
+compatibility is claimed here. Building every suite adds substantial work,
+disk usage and temporary-space demand. Check available RAM, cache disk and
+`/tmp` space before starting; select one suite for bounded evaluation.

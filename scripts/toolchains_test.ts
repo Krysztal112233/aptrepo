@@ -162,7 +162,7 @@ else if (command === "sha256sum") {
           }).output();
           ok(result.success, new TextDecoder().decode(result.stderr));
           const order = selection === undefined
-            ? ["amd64", "arm64", "riscv64"]
+            ? host === "amd64" ? ["amd64"] : ["amd64", "arm64"]
             : selection === host
             ? [host]
             : [foreign, host];
@@ -175,6 +175,8 @@ else if (command === "sha256sum") {
         }
       }
       // Native chroot setup must neither require nor invoke QEMU/arch-test.
+      // The amd64-only build matrix gates setup-sbuild too, so only an amd64
+      // host can prepare its (matrix-native) chroot.
       await Deno.writeTextFile(log, "");
       const result = await new Deno.Command("sh", {
         args: ["scripts/setup-sbuild", "trixie", host],
@@ -183,16 +185,21 @@ else if (command === "sha256sum") {
         stdout: "piped",
         stderr: "piped",
       }).output();
-      ok(result.success, new TextDecoder().decode(result.stderr));
-      deepStrictEqual(
-        (await Deno.readTextFile(log)).trim(),
-        `chroot:--architectures=${host}`,
-      );
-      ok(
-        (await Deno.stat(
-          join(env.XDG_CACHE_HOME, `sbuild/trixie-${host}.tar.zst`),
-        )).isFile,
-      );
+      if (host === "amd64") {
+        ok(result.success, new TextDecoder().decode(result.stderr));
+        deepStrictEqual(
+          (await Deno.readTextFile(log)).trim(),
+          `chroot:--architectures=${host}`,
+        );
+        ok(
+          (await Deno.stat(
+            join(env.XDG_CACHE_HOME, `sbuild/trixie-${host}.tar.zst`),
+          )).isFile,
+        );
+      } else {
+        ok(!result.success);
+        deepStrictEqual(await Deno.readTextFile(log), "");
+      }
       for (
         const args of [["all", host], ["trixie", "armhf"], [
           "trixie",

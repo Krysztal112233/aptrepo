@@ -9,13 +9,17 @@ export const supportedSuites = ["bookworm", "trixie", "forky"] as const;
 export type DebianSuite = typeof supportedSuites[number];
 export type ToolchainKind = "go" | "rust";
 
+// Build matrix: amd64 only. Emulated foreign builds were dropped because the
+// fat-LTO link of large Rust packages stalls for hours under QEMU user-mode
+// and exhausts typical build-host memory. repository.toml may still publish a
+// wider suite_architectures matrix for already-built foreign artifacts.
 export const defaultSuiteArchitectures: Record<
   DebianSuite,
   readonly DebianArchitecture[]
 > = {
-  bookworm: ["amd64", "arm64"],
-  trixie: ["amd64", "arm64", "riscv64"],
-  forky: ["amd64", "arm64", "riscv64"],
+  bookworm: ["amd64"],
+  trixie: ["amd64"],
+  forky: ["amd64"],
 };
 
 type Table = Record<string, unknown>;

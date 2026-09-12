@@ -33,6 +33,10 @@ export function parseIncrementalArgs(args: string[]) {
 
 async function main() {
   const { since, selection, dryRun } = parseIncrementalArgs(Deno.args);
+  const selectedSuites = suitesForSelection(selection);
+  if (selectedSuites.length === 0) {
+    throw new Error(`No Debian suite supports architecture ${selection}`);
+  }
 
   const projectDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
   const packagesDir = join(projectDir, "packages");
@@ -136,7 +140,7 @@ async function main() {
   }
 
   await preflightBuild(
-    suitesForSelection(selection),
+    selectedSuites,
     selection,
     await hostArchitecture(),
     cacheHome(),

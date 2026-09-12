@@ -16,43 +16,41 @@ Deno.test("build-targets: defaults, explicit targets, host toolchains", () => {
   deepStrictEqual(parseBuildArgs([]), { suite: "trixie", selection: "all" });
   deepStrictEqual(targetArchitectures(parseSetupArgs([]), "trixie"), [
     "amd64",
-    "arm64",
-    "riscv64",
   ]);
-  deepStrictEqual(targetArchitectures("all", "bookworm"), ["amd64", "arm64"]);
+  deepStrictEqual(targetArchitectures("all", "bookworm"), ["amd64"]);
+  for (const suite of suites) {
+    deepStrictEqual(parseBuildArgs([suite, "amd64"]), {
+      suite,
+      selection: "amd64",
+    });
+    deepStrictEqual(targetArchitectures("amd64", suite), ["amd64"]);
+  }
+  // The build matrix is amd64-only; foreign names still parse for publication
+  // and toolchain flows but are rejected for builds.
+  throws(() => targetArchitectures("arm64", "trixie"));
+  throws(() => parseBuildArgs(["trixie", "arm64"]));
+  throws(() => parseBuildArgs(["trixie", "riscv64"]));
+  throws(() => parseBuildArgs(["bookworm", "riscv64"]));
   for (const host of ["amd64", "arm64"] as const) {
-    for (const target of ["amd64", "arm64"] as const) {
-      deepStrictEqual(targetArchitectures(parseSelection(target), "trixie"), [
-        target,
-      ]);
-      deepStrictEqual(
-        toolchainArchitectures(target, host),
-        target === host ? [target] : [target, host],
-      );
-      for (const suite of suites) {
-        deepStrictEqual(parseBuildArgs([suite, target]), {
-          suite,
-          selection: target,
-        });
-      }
-    }
-    deepStrictEqual(toolchainArchitectures("all", host), [
-      "amd64",
-      "arm64",
-      "riscv64",
-    ]);
+    deepStrictEqual(
+      toolchainArchitectures("amd64", host),
+      host === "amd64" ? ["amd64"] : ["amd64", "arm64"],
+    );
+    deepStrictEqual(
+      toolchainArchitectures("arm64", host),
+      host === "arm64" ? ["arm64"] : ["arm64", host],
+    );
     deepStrictEqual(
       toolchainArchitectures("riscv64", host),
       ["riscv64", host],
     );
+    deepStrictEqual(
+      toolchainArchitectures("all", host),
+      host === "amd64" ? ["amd64"] : ["amd64", "arm64"],
+    );
   }
-  deepStrictEqual(parseBuildArgs(["trixie", "riscv64"]), {
-    suite: "trixie",
-    selection: "riscv64",
-  });
-  throws(() => parseBuildArgs(["bookworm", "riscv64"]));
   deepStrictEqual(suitesForSelection("all"), [...suites]);
-  deepStrictEqual(suitesForSelection("riscv64"), ["trixie", "forky"]);
+  deepStrictEqual(suitesForSelection("riscv64"), []);
   deepStrictEqual(suitesForSelection("amd64"), [...suites]);
   deepStrictEqual(qemuEmulator("amd64"), "qemu-x86_64");
   deepStrictEqual(qemuEmulator("arm64"), "qemu-aarch64");
@@ -80,7 +78,7 @@ Deno.test("build-targets: check every chroot before foreign execution", async ()
     preflightBuild(suites, "all", "amd64", "/cache", {
       exists: (path) => {
         checked.push(path);
-        return Promise.resolve(!path.endsWith("forky-riscv64.tar.zst"));
+        return Promise.resolve(!path.endsWith("forky-amd64.tar.zst"));
       },
       readTextFile: () => {
         throw new Error("must not probe yet");
@@ -88,7 +86,7 @@ Deno.test("build-targets: check every chroot before foreign execution", async ()
       capture: () => {
         throw new Error("must not execute yet");
       },
-    }), /just setup-sbuild forky riscv64/);
+    }), /just setup-sbuild forky amd64/);
   deepStrictEqual(
     checked,
     suites.flatMap((suite) =>
@@ -117,9 +115,16 @@ Deno.test("build-targets: native bypass, enabled F registration, arch-test failu
           return Promise.resolve("ok");
         },
       };
-      if (foreign !== "riscv64") {
+      if (host === "amd64") {
+        // The amd64-only build matrix reaches preflightBuild's native bypass
+        // only on an amd64 host.
         await preflightBuild(["trixie"], host, host, "/cache", runtime);
         deepStrictEqual(probes, []);
+      } else {
+        await rejects(
+          () => preflightBuild(["trixie"], host, host, "/cache", runtime),
+          /not supported/,
+        );
       }
       await preflightForeignExecution([foreign], host, runtime);
       deepStrictEqual(probes, [

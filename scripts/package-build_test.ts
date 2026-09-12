@@ -201,49 +201,48 @@ toolchain = "${kind}"
           },
         };
         const moduleUrl = pathToFileURL(join(packageDir, "build.ts")).href;
-        // Missing later target must stop before any source preparation/build.
-        await Deno.remove(join(cache, "sbuild/trixie-riscv64.tar.zst"));
+        // Missing a target chroot must stop before any source preparation or
+        // build, even when it is the only (native) target.
+        await Deno.remove(join(cache, "sbuild/trixie-amd64.tar.zst"));
         await rejects(
           () => buildPackage(moduleUrl, undefined, undefined, runtime),
-          /setup-sbuild trixie riscv64/,
+          /setup-sbuild trixie amd64/,
         );
         deepStrictEqual(events, ["preflight"]);
         events.length = 0;
-        await touch(join(cache, "sbuild/trixie-riscv64.tar.zst"));
+        await touch(join(cache, "sbuild/trixie-amd64.tar.zst"));
         await buildPackage(moduleUrl, undefined, undefined, runtime);
         deepStrictEqual(events, [
           "preflight",
           "source",
           "amd64",
-          "source",
-          "arm64",
-          "source",
-          "riscv64",
         ]);
         deepStrictEqual(
           vendors,
           [vendor],
           "host-vendored orig is reused across serial targets",
         );
-        for (const arch of ["amd64", "arm64", "riscv64"]) {
-          for (const extension of ["deb", "changes", "buildinfo"]) {
-            ok(
-              await exists(
-                join(
-                  root,
-                  `build/trixie/fixture_1.0-1~deb13u1_${arch}.${extension}`,
-                ),
+        for (const extension of ["deb", "changes", "buildinfo"]) {
+          ok(
+            await exists(
+              join(
+                root,
+                `build/trixie/fixture_1.0-1~deb13u1_amd64.${extension}`,
               ),
-            );
-          }
+            ),
+          );
         }
         events.length = 0;
         await rejects(() =>
           buildPackage(moduleUrl, "trixie", "armhf", runtime)
         );
         deepStrictEqual(events, []);
-        await buildPackage(moduleUrl, "trixie", "arm64", runtime);
-        deepStrictEqual(events, ["preflight", "source", "arm64"]);
+        // Foreign selections are rejected by the amd64-only build matrix.
+        await rejects(
+          () => buildPackage(moduleUrl, "trixie", "arm64", runtime),
+          /not supported/,
+        );
+        deepStrictEqual(events, []);
         events.length = 0;
         let failedWorkDir = "";
         await rejects(() =>
