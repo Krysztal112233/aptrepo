@@ -1,6 +1,6 @@
 [package]
 name = "uv"
-version = "0.12.9"
+version = "0.12.13"
 debian_revision = "1"
 
 [source]
@@ -8,7 +8,7 @@ git = "https://github.com/astral-sh/uv"
 tag = "{version}"
 archive = "{git}/archive/refs/tags/{tag}.tar.gz"
 archive_root = "uv-{version}"
-sha256 = "e5655f247a3ef1f44bbedb403a8fbcfaef0c5082d7cb52b6536349a50ebc3df0"
+sha256 = "6fed06d051682d521335fb26cd422bc652e5e15b87ea87ab13353b89d865fe40"
 
 [build]
 toolchain = "rust"
