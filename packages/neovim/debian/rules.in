@@ -1,0 +1,32 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+	cmake -S cmake.deps -B .deps -G Ninja -D CMAKE_BUILD_TYPE=Release
+	cmake --build .deps
+	cmake -B build -G Ninja -D CMAKE_BUILD_TYPE=Release \
+		-D CMAKE_INSTALL_PREFIX=/usr \
+		-D CMAKE_PREFIX_PATH=$(CURDIR)/.deps/usr
+
+override_dh_auto_build:
+	cmake --build build
+
+# Upstream's functional/unit suites expect a full CI environment (pseudottys,
+# locales, nss wrappers); upstream CI covers them. Packaging builds skip them,
+# matching the autopkgtest/lintian skips in scripts/package-build.ts.
+override_dh_auto_test:
+
+override_dh_auto_install:
+	DESTDIR=$(CURDIR)/debian/neovim cmake --install build
+	gzip -9n debian/neovim/usr/share/man/man1/*.1
+
+# The vendored dependency download cache (.deps/build/downloads) ships inside
+# the orig tarball and must survive the clean target so the offline sbuild
+# chroot build keeps working.
+override_dh_auto_clean:
+	rm -rf build .deps/usr .deps/build/src
+
+override_dh_strip:
+	dh_strip --no-automatic-dbgsym

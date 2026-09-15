@@ -13,6 +13,7 @@ const names = [
   "just",
   "sccache",
   "d2",
+  "neovim",
 ];
 
 async function command(
@@ -63,7 +64,7 @@ Deno.test("incremental-build: preserve since/dry-run order and validate all argu
   }
 });
 
-Deno.test("Justfile and all nine package modules: default and explicit forwarding (9x3x2)", async () => {
+Deno.test("Justfile and all ten package modules: default and explicit forwarding (10x3x2)", async () => {
   for (const name of names) {
     const defaultBuild = await command("just", ["--dry-run", `${name}::build`]);
     ok(defaultBuild.includes(`./packages/${name}/build.ts 'trixie' 'all'`));
@@ -78,11 +79,19 @@ Deno.test("Justfile and all nine package modules: default and explicit forwardin
         ]);
         const preflight =
           `./scripts/build-targets.ts --build '${suite}' '${arch}'`;
-        const setup = `just setup-${
-          ["d2", "lazygit"].includes(name) ? "go" : "rust"
-        } '${arch}'`;
+        const setup = name === "neovim"
+          ? null
+          : `just setup-${
+            ["d2", "lazygit"].includes(name) ? "go" : "rust"
+          } '${arch}'`;
         ok(build.includes(preflight));
-        ok(build.indexOf(preflight) < build.indexOf(setup));
+        if (setup === null) {
+          // The system toolchain takes its build tools from the chroot and
+          // has no setup-* recipe.
+          ok(!build.includes("setup-"));
+        } else {
+          ok(build.indexOf(preflight) < build.indexOf(setup));
+        }
         ok(build.includes(`./packages/${name}/build.ts '${suite}' '${arch}'`));
       }
       const all = await command("just", [

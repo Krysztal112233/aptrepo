@@ -1,6 +1,6 @@
 # Building Packages
 
-After [setting up the build environment](build-environment.md), build all nine
+After [setting up the build environment](build-environment.md), build all ten
 packages for every suite. The build matrix is **amd64-only**
 (`scripts/config.ts`); `repository.toml` still publishes the wider per-suite
 architecture matrix for previously built foreign artifacts:
@@ -26,6 +26,14 @@ direct scripts expect it already prepared:
 ./scripts/setup-go.ts amd64
 ./packages/d2/build.ts trixie amd64
 ```
+
+Go and Rust packages build with a downloaded compiler that is injected into
+the sbuild chroot as an extra package. The `system` toolchain (currently
+neovim) instead takes its compiler and build tools from the target chroot's
+own Debian mirror via ordinary `Build-Depends`, so there is no setup step.
+Packages with build-time downloads (neovim's bundled `cmake.deps`) have them
+pre-fetched and vendored into the orig tarball at package time, keeping the
+chroot build offline.
 
 Incremental builds retain the first `since` argument and accept architecture
 selection second. They consider both commits and working-tree changes:

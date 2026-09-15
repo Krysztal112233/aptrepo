@@ -1,0 +1,21 @@
+Source: neovim
+Section: editors
+Priority: optional
+Maintainer: Krysztal Huang <krysztal.huang@outlook.com>
+Build-Depends:
+ cmake,
+ debhelper-compat (= 13),
+ gcc,
+ ninja-build,
+Standards-Version: 4.7.2
+Homepage: {{SOURCE_GIT}}
+Rules-Requires-Root: no
+
+Package: neovim
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: heavily refactored vim fork
+ Neovim is a fork of Vim focused on modern code and features, extensibility,
+ and simplified maintenance. This build compiles neovim from upstream source
+ with its bundled dependencies (LuaJIT, libuv, tree-sitter, ...) so it
+ installs and runs independently of the suite's library versions.

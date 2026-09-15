@@ -43,6 +43,7 @@ mod uv       "packages/uv/justfile"
 mod just     "packages/just/justfile"
 mod sccache  "packages/sccache/justfile"
 mod d2       "packages/d2/justfile"
+mod neovim   "packages/neovim/justfile"
 
 # ---- Aggregate ----
 
@@ -57,6 +58,7 @@ build-all arch="all":
     @just just::build-all {{quote(arch)}}
     @just sccache::build-all {{quote(arch)}}
     @just d2::build-all {{quote(arch)}}
+    @just neovim::build-all {{quote(arch)}}
 
 # ---- Incremental build ----
 
