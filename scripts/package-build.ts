@@ -50,6 +50,13 @@ const buildRuntime = {
   preflightBuild,
 };
 
+/**
+ * Vendoring-policy identity of the "system" toolchain. Bump the revision
+ * whenever the cmake.deps prefetch logic in prepareSystemSource changes, so
+ * cached vendored orig tarballs are regenerated.
+ */
+const systemVendoringRevision = "sys1";
+
 interface BuildEnvironment {
   runtime: typeof buildRuntime;
   projectDir: string;
@@ -251,9 +258,53 @@ async function buildTarget(
 async function createBuildAdapter(
   environment: BuildEnvironment,
 ): Promise<BuildAdapter> {
-  return environment.packageConfig.build.toolchain === "go"
-    ? await createGoAdapter(environment)
-    : await createRustAdapter(environment);
+  switch (environment.packageConfig.build.toolchain) {
+    case "go":
+      return await createGoAdapter(environment);
+    case "rust":
+      return await createRustAdapter(environment);
+    case "system":
+      return createSystemAdapter(environment);
+  }
+}
+
+/**
+ * Deps of neovim's bundled cmake.deps that a default Linux build never
+ * downloads: Windows-only redistributables, Windows-only bundled
+ * gettext/libiconv, wasmtime (ENABLE_WASMTIME defaults to OFF), and
+ * uncrustify, which is dev tooling of the top-level build, not of cmake.deps.
+ */
+const cmakeDepsLinuxSkips = new Set([
+  "GETTEXT",
+  "LIBICONV",
+  "UNCRUSTIFY",
+  "WASMTIME",
+  "WIN32YANK_X86_64",
+]);
+
+function createSystemAdapter(
+  environment: BuildEnvironment,
+): BuildAdapter {
+  const vendoredIdentity = [
+    environment.packageConfig.source.sha256.slice(0, 12),
+    systemVendoringRevision,
+  ].join("-");
+  const vendoredOrig = join(
+    environment.downloadDir,
+    `${environment.packageConfig.name}_${environment.packageConfig.version}.${vendoredIdentity}.orig.tar.gz`,
+  );
+
+  // The compiler and build tools come from the target chroot's Debian mirror
+  // (declared as ordinary Build-Depends), so there is nothing to inject and
+  // nothing to render into the debian templates beyond SOURCE_GIT.
+  return {
+    extraPackages: [],
+    controlReplacements: {},
+    rulesReplacements: {},
+    prepareSource(sourceEnvironment) {
+      return prepareSystemSource(sourceEnvironment, vendoredOrig);
+    },
+  };
 }
 
 async function createGoAdapter(
@@ -360,6 +411,99 @@ async function createRustAdapter(
       );
     },
   };
+}
+
+async function prepareSystemSource(
+  environment: SourceEnvironment,
+  vendoredOrig: string,
+): Promise<string> {
+  if (await exists(vendoredOrig)) {
+    await environment.runtime.run("tar", [
+      "-xzf",
+      vendoredOrig,
+      "-C",
+      environment.workDir,
+    ]);
+    return vendoredOrig;
+  }
+
+  await environment.runtime.run("tar", [
+    "-xzf",
+    environment.download,
+    "-C",
+    environment.workDir,
+  ]);
+  if (!(await exists(environment.sourceDir))) {
+    throw new Error(
+      `${environment.packageConfig.configPath}: archive_root was not found after extraction`,
+    );
+  }
+
+  // Packages such as neovim download their bundled dependencies at build
+  // time through cmake.deps; pre-fetch those tarballs so the sbuild chroot
+  // still builds offline.
+  const depsManifest = join(environment.sourceDir, "cmake.deps/deps.txt");
+  if (await exists(depsManifest)) {
+    await prefetchCmakeDeps(environment, depsManifest);
+  }
+
+  const temporaryOrig = await Deno.makeTempFile({
+    dir: environment.downloadDir,
+    prefix: `.${environment.packageConfig.name}-orig-`,
+    suffix: ".tar.gz",
+  });
+  await environment.runtime.run("tar", [
+    "--sort=name",
+    "--mtime=@0",
+    "--owner=0",
+    "--group=0",
+    "--numeric-owner",
+    "-czf",
+    temporaryOrig,
+    "-C",
+    environment.workDir,
+    environment.packageConfig.source.archiveRoot,
+  ]);
+  await Deno.rename(temporaryOrig, vendoredOrig);
+  return vendoredOrig;
+}
+
+/**
+ * Pre-fetch the tarballs listed in a cmake.deps/deps.txt manifest into the
+ * download cache (`.deps/build/downloads/<dep>/<file>`) that ExternalProject
+ * consults during the chroot build. Every manifest entry carries a SHA-256,
+ * so the build's download step accepts the pre-seeded file and never touches
+ * the network.
+ */
+async function prefetchCmakeDeps(
+  environment: SourceEnvironment,
+  depsManifest: string,
+): Promise<void> {
+  const urls = new Map<string, string>();
+  const sha256s = new Map<string, string>();
+  for (const line of (await Deno.readTextFile(depsManifest)).split("\n")) {
+    const match = line.match(/^([A-Z0-9_]+)_(URL|SHA256)\s+(\S+)$/);
+    if (!match) continue;
+    if (match[2] === "URL") urls.set(match[1], match[3]);
+    else sha256s.set(match[1], match[3]);
+  }
+
+  for (const [name, url] of urls) {
+    if (cmakeDepsLinuxSkips.has(name)) continue;
+    const sha256 = sha256s.get(name);
+    if (!sha256) {
+      throw new Error(`${depsManifest}: ${name}_URL without ${name}_SHA256`);
+    }
+    const base = new URL(url).pathname.split("/").pop()!;
+    const destination = join(
+      environment.sourceDir,
+      ".deps/build/downloads",
+      name.toLowerCase(),
+      base,
+    );
+    await Deno.mkdir(dirname(destination), { recursive: true });
+    await environment.runtime.downloadVerified(url, destination, sha256);
+  }
 }
 
 async function prepareGoSource(

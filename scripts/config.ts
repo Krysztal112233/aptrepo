@@ -7,7 +7,7 @@ export const supportedArchitectures = ["amd64", "arm64", "riscv64"] as const;
 export type DebianArchitecture = typeof supportedArchitectures[number];
 export const supportedSuites = ["bookworm", "trixie", "forky"] as const;
 export type DebianSuite = typeof supportedSuites[number];
-export type ToolchainKind = "go" | "rust";
+export type ToolchainKind = "go" | "rust" | "system";
 
 // Build matrix: amd64 only. Emulated foreign builds were dropped because the
 // fat-LTO link of large Rust packages stalls for hours under QEMU user-mode
@@ -90,7 +90,16 @@ export interface RustToolchainConfig {
   >;
 }
 
-export type ToolchainConfig = GoToolchainConfig | RustToolchainConfig;
+export interface SystemToolchainConfig {
+  kind: "system";
+  /** Where the build tools come from; reported by check-config. */
+  version: "chroot";
+}
+
+export type ToolchainConfig =
+  | GoToolchainConfig
+  | RustToolchainConfig
+  | SystemToolchainConfig;
 
 export async function loadRepositoryConfig(
   projectDir: string,
@@ -224,13 +233,25 @@ export async function loadPackageConfig(
   };
 }
 
+export const systemToolchainConfig: SystemToolchainConfig = {
+  kind: "system",
+  version: "chroot",
+};
+
 export async function loadToolchainConfig(
   projectDir: string,
   kind: ToolchainKind,
 ): Promise<ToolchainConfig> {
-  return kind === "go"
-    ? await loadGoToolchainConfig(projectDir)
-    : await loadRustToolchainConfig(projectDir);
+  switch (kind) {
+    case "go":
+      return await loadGoToolchainConfig(projectDir);
+    case "rust":
+      return await loadRustToolchainConfig(projectDir);
+    case "system":
+      // The system toolchain takes its compiler and build tools from the
+      // target chroot's Debian mirror, so there is no toolchains/*.toml.
+      return systemToolchainConfig;
+  }
 }
 
 export async function loadGoToolchainConfig(
@@ -597,7 +618,7 @@ function readToolchainKind(
   configPath: string,
 ): ToolchainKind {
   const value = readString(table, field, configPath);
-  if (value !== "go" && value !== "rust") {
+  if (value !== "go" && value !== "rust" && value !== "system") {
     throw new Error(
       `${configPath}: unsupported toolchain ${value}`,
     );
