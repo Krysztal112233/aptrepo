@@ -1,6 +1,6 @@
 [package]
 name = "lazygit"
-version = "0.65.0"
+version = "0.65.1"
 debian_revision = "1"
 
 [source]
@@ -8,7 +8,7 @@ git = "https://github.com/jesseduffield/lazygit"
 tag = "v{version}"
 archive = "{git}/archive/refs/tags/{tag}.tar.gz"
 archive_root = "lazygit-{version}"
-sha256 = "972151d83d8fdfa5c7c881c34349ba4a38c37b7085667696b85c443d2fca97ed"
+sha256 = "df30ec1a5032b3c5672a30090fe787fb32d4122fd996d6d85e1d10135acfbc89"
 
 [build]
 toolchain = "go"
