@@ -1,6 +1,6 @@
 # Building Packages
 
-After [setting up the build environment](build-environment.md), build all ten
+After [setting up the build environment](build-environment.md), build all eleven
 packages for every suite. The build matrix is **amd64-only**
 (`scripts/config.ts`); `repository.toml` still publishes the wider per-suite
 architecture matrix for previously built foreign artifacts:

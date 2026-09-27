@@ -1,0 +1,14 @@
+[package]
+name = "gix"
+version = "0.59.0"
+debian_revision = "1"
+
+[source]
+git = "https://github.com/GitoxideLabs/gitoxide"
+tag = "v{version}"
+archive = "{git}/archive/refs/tags/{tag}.tar.gz"
+archive_root = "gitoxide-{version}"
+sha256 = "a2761fa1a75c696338e9f8511c1eef92ab2540ea26f7e74d446b9cf2f9ae5569"
+
+[build]
+toolchain = "rust"

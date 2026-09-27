@@ -14,6 +14,7 @@ const names = [
   "sccache",
   "d2",
   "neovim",
+  "gix",
 ];
 
 async function command(

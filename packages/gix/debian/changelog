@@ -1,0 +1,5 @@
+gix (0.59.0-1) UNRELEASED; urgency=medium
+
+  * Build the upstream gitoxide release from source.
+
+ -- Krysztal Huang <krysztal.huang@outlook.com>  Sun, 27 Sep 2026 12:18:47 +0800

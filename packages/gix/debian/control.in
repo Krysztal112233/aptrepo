@@ -1,0 +1,20 @@
+Source: gix
+Section: vcs
+Priority: optional
+Maintainer: Krysztal Huang <krysztal.huang@outlook.com>
+Build-Depends:
+ {{RUST_PACKAGE_NAME}} (= {{RUST_PACKAGE_VERSION}}),
+ cmake,
+ debhelper-compat (= 13),
+Standards-Version: 4.7.2
+Homepage: {{SOURCE_GIT}}
+Rules-Requires-Root: no
+
+Package: gix
+Architecture: any
+Depends: ca-certificates, ${misc:Depends}, ${shlibs:Depends}
+Description: fast, safe, pure-Rust git implementation (command-line interface)
+ gix is the command-line interface of gitoxide, an implementation of git
+ written in pure Rust. It provides familiar git porcelain commands along
+ with plumbing tools for repository inspection, built for speed, safety,
+ and a friendly user experience.

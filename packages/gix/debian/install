@@ -1,0 +1,4 @@
+target/release/gix usr/bin
+debian/generated/gix.bash usr/share/bash-completion/completions
+debian/generated/gix.fish usr/share/fish/vendor_completions.d
+debian/generated/_gix usr/share/zsh/vendor-completions

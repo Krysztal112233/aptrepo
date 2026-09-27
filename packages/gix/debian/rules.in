@@ -1,0 +1,27 @@
+#!/usr/bin/make -f
+
+export PATH := {{RUST_INSTALL_PREFIX}}/bin:$(PATH)
+export CARGO_HOME := $(CURDIR)/debian/.cargo-home
+export CARGO_NET_OFFLINE := true
+export CARGO_TARGET_DIR := $(CURDIR)/target
+
+{{RUST_BUILD_TUNING}}
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	cargo build --release --locked --offline --no-default-features --features max-pure
+	mkdir -p debian/generated
+	./target/release/gix completions --shell bash > debian/generated/gix.bash
+	./target/release/gix completions --shell fish > debian/generated/gix.fish
+	./target/release/gix completions --shell zsh > debian/generated/_gix
+
+override_dh_auto_clean:
+	rm -rf target debian/.cargo-home debian/generated
+
+override_dh_strip:
+	dh_strip --no-automatic-dbgsym
+
+override_dh_clean:
+	dh_clean -Xvendor/
