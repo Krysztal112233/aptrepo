@@ -1,0 +1,20 @@
+Source: gleam
+Section: devel
+Priority: optional
+Maintainer: Krysztal Huang <krysztal.huang@outlook.com>
+Build-Depends:
+ {{RUST_PACKAGE_NAME}} (= {{RUST_PACKAGE_VERSION}}),
+ cmake,
+ debhelper-compat (= 13),
+ pkgconf,
+Standards-Version: 4.7.2
+Homepage: {{SOURCE_GIT}}
+Rules-Requires-Root: no
+
+Package: gleam
+Architecture: any
+Depends: ca-certificates, erlang-base, ${misc:Depends}, ${shlibs:Depends}
+Description: compiler and build tool for the Gleam programming language
+ Gleam is a friendly, statically typed functional language targeting the Erlang
+ virtual machine and JavaScript runtimes. This package provides its compiler and
+ project build tool.

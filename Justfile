@@ -45,6 +45,7 @@ mod sccache  "packages/sccache/justfile"
 mod d2       "packages/d2/justfile"
 mod neovim   "packages/neovim/justfile"
 mod gix      "packages/gix/justfile"
+mod gleam    "packages/gleam/justfile"
 
 # ---- Aggregate ----
 
@@ -61,6 +62,7 @@ build-all arch="all":
     @just d2::build-all {{quote(arch)}}
     @just neovim::build-all {{quote(arch)}}
     @just gix::build-all {{quote(arch)}}
+    @just gleam::build-all {{quote(arch)}}
 
 # ---- Incremental build ----
 

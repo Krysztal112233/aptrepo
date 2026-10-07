@@ -1,0 +1,14 @@
+[package]
+name = "gleam"
+version = "1.19.0"
+debian_revision = "1"
+
+[source]
+git = "https://github.com/gleam-lang/gleam"
+tag = "v{version}"
+archive = "{git}/archive/refs/tags/{tag}.tar.gz"
+archive_root = "gleam-{version}"
+sha256 = "1ee53459e1939cbd8dd4571d8268d7f74123fc16f36cc5241e4594b808ee9cab"
+
+[build]
+toolchain = "rust"
