@@ -13,7 +13,7 @@ export CARGO_TARGET_DIR := $(CURDIR)/target
 override_dh_auto_build:
 	cargo build --release --locked --offline
 	mkdir -p debian/generated/man
-	./target/release/himalaya manual debian/generated/man
+	./target/release/himalaya manual --dir debian/generated/man
 	gzip -9n debian/generated/man/*.1
 	./target/release/himalaya completion bash fish zsh --dir debian/generated
 
