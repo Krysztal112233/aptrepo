@@ -6,6 +6,7 @@ Build-Depends:
  {{RUST_PACKAGE_NAME}} (= {{RUST_PACKAGE_VERSION}}),
  cmake,
  debhelper-compat (= 13),
+ git,
  pkgconf,
 Standards-Version: 4.7.2
 Homepage: {{SOURCE_GIT}}
