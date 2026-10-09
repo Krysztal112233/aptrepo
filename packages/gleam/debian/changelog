@@ -1,6 +1,7 @@
 gleam (1.19.0-1) UNRELEASED; urgency=medium
 
   * New upstream release.
-  * Run Cargo unit tests with git; skip integration tests requiring extra runtimes.
+  * Build the Gleam CLI and run gleam-core unit tests with git available;
+    skip source hygiene tests that scan build artifacts.
 
- -- Krysztal Huang <krysztal.huang@outlook.com>  Thu, 08 Oct 2026 19:22:44 +0800
+ -- Krysztal Huang <krysztal.huang@outlook.com>  Fri, 09 Oct 2026 16:00:39 +0800

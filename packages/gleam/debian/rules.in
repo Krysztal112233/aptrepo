@@ -13,10 +13,11 @@ export CARGO_TARGET_DIR := $(CURDIR)/target
 override_dh_auto_build:
 	cargo build --release --locked --offline --package gleam --bin gleam
 
-# Run Rust unit tests only; upstream's full Makefile target also needs clippy,
-# Erlang, and JavaScript runtimes unavailable in the package build environment.
+# Run gleam-core's unit tests only; the full workspace suite also needs
+# Erlang/JS runtimes and network access. Skip the source hygiene test, which
+# scans upstream sources and vendored build-tree artifacts.
 override_dh_auto_test:
-	cargo test --locked --offline --quiet
+	cargo test --locked --offline --release --package gleam-core -- --skip tests::all_files_have_copyright_notice
 
 override_dh_auto_clean:
 	rm -rf target debian/.cargo-home
