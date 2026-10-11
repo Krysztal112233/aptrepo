@@ -1,14 +1,18 @@
 [package]
 name = "wezterm"
-version = "20240203-110809-5046fc22"
-debian_revision = "2"
+version = "20261010-073911-e2a98e1b"
+debian_revision = "1"
 
 [source]
-git = "https://github.com/wez/wezterm"
-tag = "{version}"
-archive = "{git}/archive/refs/tags/{tag}.tar.gz"
-archive_root = "wezterm-{version}"
-sha256 = "3a02a68016ef48cdb2127308be20acafe94a568411e95b0e64dc590cf877b401"
+git = "https://github.com/wezterm/wezterm"
+commit = "e2a98e1b8af156988ad0ac778658ac27b60a55fb"
+archive = "{git}/archive/{commit}.tar.gz"
+archive_root = "wezterm-{commit}"
+sha256 = "3939caa272fc97817ed72ef02e4701744ea96746d73500c00eedda31284f06dc"
+
+# Discovery only: builds always use the immutable source.commit above.
+[updates]
+branch = "main"
 
 [build]
 toolchain = "rust"

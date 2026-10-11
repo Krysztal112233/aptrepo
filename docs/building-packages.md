@@ -39,9 +39,9 @@ Rust packages that need source-tree fixes before vendoring can ship an
 executable `packages/<name>/pre-vendor`: it runs on the host after extraction
 and before `cargo vendor`, with the toolchain's cargo as `$1` and the source
 tree as the working directory. The script's checksum is part of the vendored
-tarball identity, so edits invalidate the cache. (wezterm uses this to refresh
-its 2024 `time` lockfile entry and pin `glium` 0.32.1: 0.31's undefined behavior
-in OpenGL texture creation renders text as blocks with modern Rust.)
+tarball identity, so edits invalidate the cache. WezTerm uses this to populate
+checksum-verified C-library submodules omitted from GitHub's source archive,
+without modifying the snapshot's upstream Cargo.lock.
 
 Incremental builds retain the first `since` argument and accept architecture
 selection second. They consider both commits and working-tree changes:
@@ -60,17 +60,27 @@ not need emulation. Selections outside the amd64 build matrix (for example
 `bookworm` + `riscv64`, or any foreign architecture) fail before toolchain
 setup.
 
-To check whether upstream published newer stable tags than the pinned ones:
+To check for newer stable tags or candidate commit snapshots:
 
 ```sh
 just check-updates        # every package
 just check-updates d2     # one package
 ```
 
-The recipe lists each `source.git` remote's tags with `git ls-remote`
-(version-sorted, no downloads) and reports packages whose pinned `source.tag` is
-not the newest stable match or no longer exists upstream. Updates are
-informational; missing tags and lookup failures exit non-zero.
+For tag-based packages, the recipe lists each `source.git` remote's tags with
+`git ls-remote` (version-sorted, no downloads) and reports packages whose pinned
+`source.tag` is not the newest stable match or no longer exists upstream.
+
+Snapshot packages specify `source.commit` (a full 40-character Git SHA) instead
+of `source.tag`, plus `[updates] branch = "main"` for discovery. `{commit}` may
+be used in their archive URL and root templates; builds still use only the
+fixed commit and archive checksum. The update checker queries the exact tracked
+branch and reports `branch head differs`, not a new stable release. This is a
+candidate for manual review, including possible branch rewinds. Neither mode
+changes configuration. Missing tags/branches and lookup failures exit non-zero;
+updates and snapshot candidates are informational. See
+[WezTerm snapshot maintenance](../packages/wezterm/README.md) for its update and
+regression-test checklist.
 
 Build outputs are written to `build/<suite>/`, with `_<arch>.deb`,
 `_<arch>.changes`, and `_<arch>.buildinfo` names. The emulated-native foreign

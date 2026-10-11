@@ -9,10 +9,6 @@ export CARGO_TARGET_DIR := $(CURDIR)/target
 
 include /usr/share/dpkg/pkg-info.mk
 
-# wezterm's 2024 codebase trips deny-by-default rust_2024_compatibility
-# lints (never-type fallback) on modern rustc; cap lints to warnings.
-export RUSTFLAGS := --cap-lints warn
-
 %:
 	dh $@
 
@@ -26,6 +22,12 @@ override_dh_auto_build:
 	cp assets/wezterm.desktop debian/generated/org.wezfurlong.wezterm.desktop
 	cp assets/icon/terminal.png debian/generated/org.wezfurlong.wezterm.png
 	cp assets/wezterm.appdata.xml debian/generated/org.wezfurlong.wezterm.appdata.xml
+
+# Upstream's Makefile requires cargo-nextest, which is not in our toolchain.
+# Run the Rust unit/integration targets directly, without skipping tests.
+override_dh_auto_test:
+	cargo test --release --locked --offline --workspace --lib --bins --tests --no-fail-fast
+	cargo test --release --locked --offline -p wezterm-escape-parser --lib --tests --no-fail-fast
 
 override_dh_auto_clean:
 	rm -rf target debian/.cargo-home debian/generated

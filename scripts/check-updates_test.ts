@@ -1,6 +1,12 @@
 import { deepStrictEqual, ok, throws } from "node:assert/strict";
 import { join } from "node:path";
-import { classify, parseTagRefs, stableTagPattern } from "./check-updates.ts";
+import {
+  classify,
+  classifyCommit,
+  parseBranchHead,
+  parseTagRefs,
+  stableTagPattern,
+} from "./check-updates.ts";
 import { denoDir, makeSandbox } from "./test-harness.ts";
 
 Deno.test("check-updates: tag template compiles to a version-tag matcher", () => {
@@ -74,6 +80,41 @@ Deno.test("check-updates: classify by position in the version-sorted tag list", 
     classify("v0.9.0", ["nightly"], pattern),
     { latest: null, status: "tag missing upstream" },
   );
+});
+
+Deno.test("check-updates: branch lookup matches one exact full-SHA ref", () => {
+  const sha = "1".repeat(40);
+  deepStrictEqual(
+    parseBranchHead(
+      `${"2".repeat(40)}\trefs/heads/main-old\n${sha}\trefs/heads/main\n`,
+      "main",
+    ),
+    sha,
+  );
+  deepStrictEqual(parseBranchHead("", "main"), null);
+  deepStrictEqual(parseBranchHead(`${sha}\trefs/tags/main`, "main"), null);
+  throws(() => parseBranchHead("short\trefs/heads/main", "main"));
+  throws(() => parseBranchHead(`${sha}\tgarbage\trefs/heads/main`, "main"));
+  throws(() =>
+    parseBranchHead(`${sha}\trefs/heads/main\n${sha}\trefs/heads/main`, "main")
+  );
+});
+
+Deno.test("check-updates: a differing branch head is only a snapshot candidate", () => {
+  const pinned = "1".repeat(40);
+  const candidate = "2".repeat(40);
+  deepStrictEqual(classifyCommit(pinned, pinned), {
+    latest: pinned,
+    status: "up to date",
+  });
+  deepStrictEqual(classifyCommit(pinned, candidate), {
+    latest: candidate,
+    status: "branch head differs",
+  });
+  deepStrictEqual(classifyCommit(pinned, null), {
+    latest: null,
+    status: "branch missing upstream",
+  });
 });
 
 // The real entrypoint against a stub git: tag fixtures stand in for remotes.

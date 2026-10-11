@@ -43,15 +43,19 @@ export interface PackageConfig {
   version: string;
   debianRevision: string;
   baseVersion: string;
-  source: {
-    git: string;
-    tag: string;
-    /** Raw tag template (e.g. "v{version}"), before version interpolation. */
-    tagTemplate: string;
-    archive: string;
-    archiveRoot: string;
-    sha256: string;
-  };
+  source:
+    & {
+      git: string;
+      /** Immutable build input: the resolved tag or full commit SHA. */
+      ref: string;
+      archive: string;
+      archiveRoot: string;
+      sha256: string;
+    }
+    & (
+      | { kind: "tag"; tagTemplate: string }
+      | { kind: "commit"; updateBranch: string }
+    );
   build: {
     toolchain: ToolchainKind;
   };
@@ -200,13 +204,35 @@ export async function loadPackageConfig(
     configPath,
   );
   const git = readUrl(sourceTable, "git", configPath);
-  const tagTemplate = readString(sourceTable, "tag", configPath);
-  const tag = interpolate(
-    tagTemplate,
-    { version },
-    configPath,
-  );
-  const variables = { git, tag, version };
+  const hasTag = "tag" in sourceTable;
+  const hasCommit = "commit" in sourceTable;
+  if (hasTag === hasCommit) {
+    throw new Error(
+      `${configPath}: source must specify exactly one of tag or commit`,
+    );
+  }
+  const variables: Record<string, string> = { git, version };
+  let reference:
+    | { kind: "tag"; ref: string; tagTemplate: string }
+    | { kind: "commit"; ref: string; updateBranch: string };
+  if (hasTag) {
+    if ("updates" in document) {
+      throw new Error(`${configPath}: updates.branch requires source.commit`);
+    }
+    const tagTemplate = readString(sourceTable, "tag", configPath);
+    const tag = interpolate(tagTemplate, { version }, configPath);
+    variables.tag = tag;
+    reference = { kind: "tag", ref: tag, tagTemplate };
+  } else {
+    const commit = readString(sourceTable, "commit", configPath).toLowerCase();
+    if (!/^[0-9a-f]{40}$/.test(commit)) {
+      throw new Error(`${configPath}: source.commit must be a full Git SHA-1`);
+    }
+    const updates = readTable(document, "updates", configPath);
+    const updateBranch = readBranch(updates, "branch", configPath);
+    variables.commit = commit;
+    reference = { kind: "commit", ref: commit, updateBranch };
+  }
   const archive = readResolvedUrl(
     sourceTable,
     "archive",
@@ -231,7 +257,7 @@ export async function loadPackageConfig(
     version,
     debianRevision,
     baseVersion: `${version}-${debianRevision}`,
-    source: { git, tag, tagTemplate, archive, archiveRoot, sha256 },
+    source: { git, ...reference, archive, archiveRoot, sha256 },
     build: { toolchain },
   };
 }
@@ -596,6 +622,24 @@ function readSha256(table: Table, field: string, configPath: string): string {
     throw new Error(
       `${configPath}: ${field} must be a SHA-256 digest`,
     );
+  }
+  return value;
+}
+
+/** Validate the short branch name, never a glob or a command-line option. */
+function readBranch(table: Table, field: string, configPath: string): string {
+  const value = readString(table, field, configPath);
+  if (
+    value === "@" || value.startsWith("-") || value.endsWith(".") ||
+    [...value].some((char) =>
+      char.charCodeAt(0) <= 0x20 || char.charCodeAt(0) === 0x7f
+    ) || /[~^:?*\\]/.test(value) || value.includes("[") ||
+    value.includes("..") || value.includes("@{") ||
+    value.split("/").some((part) =>
+      !part || part.startsWith(".") || part.endsWith(".lock")
+    )
+  ) {
+    throw new Error(`${configPath}: invalid updates.branch ${value}`);
   }
   return value;
 }

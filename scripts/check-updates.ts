@@ -39,7 +39,9 @@ export function parseTagRefs(output: string): string[] {
 export type UpdateStatus =
   | "up to date"
   | "update available"
-  | "tag missing upstream";
+  | "tag missing upstream"
+  | "branch head differs"
+  | "branch missing upstream";
 
 export interface Classification {
   latest: string | null;
@@ -68,9 +70,35 @@ export function classify(
   return { latest, status: "update available" };
 }
 
+/** Match only the requested branch, and require an unambiguous full SHA. */
+export function parseBranchHead(output: string, branch: string): string | null {
+  const ref = `refs/heads/${branch}`;
+  const matches = output.split("\n").filter((line) =>
+    line.endsWith(`\t${ref}`)
+  );
+  if (matches.length === 0) return null;
+  const pattern = new RegExp(`^([0-9a-f]{40})\\t${escapeRegExp(ref)}$`);
+  const match = matches.length === 1 ? matches[0].match(pattern) : null;
+  if (!match) throw new Error(`Invalid ls-remote response for ${ref}`);
+  return match[1];
+}
+
+/** A differing head is a candidate, not proof of a newer/stable release. */
+export function classifyCommit(
+  pinnedCommit: string,
+  head: string | null,
+): Classification {
+  if (head === null) return { latest: null, status: "branch missing upstream" };
+  return {
+    latest: head,
+    status: pinnedCommit === head ? "up to date" : "branch head differs",
+  };
+}
+
 interface Report {
   name: string;
-  pinnedTag: string;
+  pinnedRef: string;
+  branch?: string;
   latest: string | null;
   status: UpdateStatus;
   error?: string;
@@ -78,19 +106,38 @@ interface Report {
 
 async function checkPackage(packageDir: string): Promise<Report> {
   const config = await loadPackageConfig(packageDir);
-  const pattern = stableTagPattern(config.source.tagTemplate);
+  const source = config.source;
+  if (source.kind === "commit") {
+    const output = await capture("git", [
+      "ls-remote",
+      "--heads",
+      "--refs",
+      source.git,
+      `refs/heads/${source.updateBranch}`,
+    ]);
+    return {
+      name: config.name,
+      pinnedRef: source.ref,
+      branch: source.updateBranch,
+      ...classifyCommit(
+        source.ref,
+        parseBranchHead(output, source.updateBranch),
+      ),
+    };
+  }
+  const pattern = stableTagPattern(source.tagTemplate);
   const output = await capture("git", [
     "ls-remote",
     "--tags",
     "--refs",
     "--sort=-version:refname",
-    config.source.git,
-    `refs/tags/${config.source.tagTemplate.replace("{version}", "*")}`,
+    source.git,
+    `refs/tags/${source.tagTemplate.replace("{version}", "*")}`,
   ]);
   return {
     name: config.name,
-    pinnedTag: config.source.tag,
-    ...classify(config.source.tag, parseTagRefs(output), pattern),
+    pinnedRef: source.ref,
+    ...classify(source.ref, parseTagRefs(output), pattern),
   };
 }
 
@@ -126,7 +173,7 @@ if (import.meta.main) {
     } catch (error) {
       return {
         name: basename(dir),
-        pinnedTag: "?",
+        pinnedRef: "?",
         latest: null,
         status: "tag missing upstream" as const,
         error: errorMessage(error),
@@ -144,17 +191,24 @@ if (import.meta.main) {
       continue;
     }
     const change = report.status === "up to date"
-      ? report.pinnedTag
-      : `${report.pinnedTag} -> ${report.latest ?? "(none)"}`;
-    if (report.status === "tag missing upstream") failures++;
-    console.log(`${name}  ${change}  ${report.status}`);
+      ? report.pinnedRef
+      : `${report.pinnedRef} -> ${report.latest ?? "(none)"}`;
+    if (
+      report.status === "tag missing upstream" ||
+      report.status === "branch missing upstream"
+    ) failures++;
+    const branch = report.branch ? ` [${report.branch}]` : "";
+    console.log(`${name}${branch}  ${change}  ${report.status}`);
   }
 
   const updates = reports.filter((report) =>
     report.status === "update available"
   ).length;
+  const candidates = reports.filter((report) =>
+    report.status === "branch head differs"
+  ).length;
   console.log(
-    `\n${reports.length} packages: ${updates} updates available, ${failures} problems`,
+    `\n${reports.length} packages: ${updates} updates available, ${candidates} snapshot candidates, ${failures} problems`,
   );
   if (failures > 0) Deno.exit(1);
 }

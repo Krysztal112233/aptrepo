@@ -1,3 +1,13 @@
+wezterm (20261010-073911-e2a98e1b-1) UNRELEASED; urgency=medium
+
+  * Package a fixed upstream commit snapshot and track main for candidate updates.
+  * Include the upstream DECSLRM column-bound fix for Neovim split scrolling.
+  * Refresh verified C-library submodule pins and retain upstream Cargo.lock.
+  * Drop dependency overrides and lint workarounds needed by the 2024 release.
+  * Run locked, offline Cargo tests without requiring cargo-nextest.
+
+ -- Krysztal Huang <krysztal.huang@outlook.com>  Mon, 12 Oct 2026 00:40:00 +0800
+
 wezterm (20240203-110809-5046fc22-2) UNRELEASED; urgency=medium
 
   * Update glium to 0.32.1 to fix OpenGL glyph textures with modern Rust.

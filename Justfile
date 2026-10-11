@@ -8,7 +8,7 @@ check-config:
 check-required:
     ./scripts/check-required
 
-# Flag packages whose pinned tag is not the newest stable upstream tag, or is gone
+# Check stable tags or report snapshot candidates on an explicitly tracked branch
 check-updates name="all":
     ./scripts/check-updates.ts {{quote(name)}}
 

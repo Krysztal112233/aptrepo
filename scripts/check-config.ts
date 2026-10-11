@@ -61,7 +61,10 @@ for (const packageDir of packageDirs.sort()) {
   );
   console.log(
     `${packageConfig.name} ${packageConfig.version}: ` +
-      `${packageConfig.source.git}@${packageConfig.source.tag}, ` +
+      `${packageConfig.source.git}@${packageConfig.source.ref}, ` +
+      (packageConfig.source.kind === "commit"
+        ? `updates.branch=${packageConfig.source.updateBranch}, `
+        : "") +
       `sha256=${packageConfig.source.sha256}, ` +
       `${toolchain.kind}=${toolchain.version}`,
   );

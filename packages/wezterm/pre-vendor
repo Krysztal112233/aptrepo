@@ -1,41 +1,32 @@
 #!/bin/sh
-# Host-side fixes before vendoring ($1 = toolchain cargo, cwd = source tree):
-#
-# 1. The 2024 lockfile pins time 0.3.31, which no longer compiles on
-#    rustc >= 1.80 (E0282); refresh it.
-# 2. glium 0.31 writes glGenTextures' result through a shared reference (UB).
-#    Modern rustc breaks the OpenGL glyph atlas, rendering text as rectangles.
-#    Pin 0.32.1, which includes glium commit ebdc18e06570d685884b68b8010b01d2aece8e3a.
-# 3. GitHub tag tarballs omit git submodule contents, but deps/freetype and
-#    deps/harfbuzz unconditionally compile their bundled C sources. Fetch the
-#    four submodule trees at the SHAs pinned by the tag's gitlinks, verified
-#    against the hashes below.
+# Host-side source preparation ($1 = toolchain cargo, cwd = source tree).
+# GitHub commit archives omit submodule contents. These gitlinks and hashes
+# belong to source.commit e2a98e1b8af156988ad0ac778658ac27b60a55fb; review
+# and refresh all four when advancing the snapshot.
+# Keep the upstream Cargo.lock unchanged: the snapshot already includes the
+# time and glium fixes that required dependency overrides in the 2024 release.
 set -eu
-
-"$1" update -p time@0.3.31 --precise 0.3.36
-sed -i 's/glium = { version = "0.31"/glium = { version = "=0.32.1"/' window/Cargo.toml
-"$1" update -p glium@0.31.0 --precise 0.32.1
 
 TMP=""
 trap 'rm -f "$TMP"' EXIT
 fetch() { # <org/repo> <sha> <sha256> <dest>
     TMP=$(mktemp)
-    curl -sfL "https://codeload.github.com/$1/tar.gz/$2" -o "$TMP"
+    curl -sfL --retry 3 "https://codeload.github.com/$1/tar.gz/$2" -o "$TMP"
     echo "$3  $TMP" | sha256sum -c - > /dev/null
     mkdir -p "$4"
     tar -xzf "$TMP" --strip-components=1 -C "$4"
     rm -f "$TMP"
 }
 
-fetch wez/freetype2 e4586d960f339cf75e2e0b34aee30a0ed8353c0d \
-    2ca70adbd15be23569762319f7cac3cd92720f6042417916540bd120f18102f5 \
+fetch freetype/freetype2 42608f77f20749dd6ddc9e0536788eaad70ea4b5 \
+    68ce87bb59ea209eb7350f41a94a27519ce16b37011b475a1e62d4abee154b66 \
     deps/freetype/freetype2
-fetch glennrp/libpng 8439534daa1d3a5705ba92e653eda9251246dd61 \
-    c73af438385b725238443ed9c23065b3ed614e04b24cd4b9560f1a587ce7f20f \
+fetch glennrp/libpng f5e92d76973a7a53f517579bc95d61483bf108c0 \
+    3689d30176661b821ce02c92baf801050bc3849d3428ff99c8afeb1ef4390c8c \
     deps/freetype/libpng
-fetch madler/zlib cacf7f1d4e3d44d871b605da3b647f07d718623f \
-    6d4d6640ca3121620995ee255945161821218752b551a1a180f4215f7d124d45 \
+fetch madler/zlib 51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf \
+    d9e270d46252734aa49770fbc544125391617956266f220bd63216c834f3a522 \
     deps/freetype/zlib
-fetch harfbuzz/harfbuzz 894a1f72ee93a1fd8dc1d9218cb3fd8f048be29a \
-    17eda8a9861d347a6e95cd2b3112301ce90dcc649b0e96623cc89c6ca4180e66 \
+fetch harfbuzz/harfbuzz 33a3f8de60dcad7535f14f07d6710144548853ac \
+    326e6c3e0fdab4e9a3df8c6daeb6251a6a8997711a58bf4f8da421195d279bf9 \
     deps/harfbuzz/harfbuzz

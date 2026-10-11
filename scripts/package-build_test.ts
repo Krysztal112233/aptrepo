@@ -34,10 +34,11 @@ version = "1.0"
 debian_revision = "1"
 [source]
 git = "https://example.invalid/fixture"
-tag = "v{version}"
-archive = "https://example.invalid/fixture.tar.gz"
+${kind === "rust" ? `commit = "${"c".repeat(40)}"` : 'tag = "v{version}"'}
+archive = "{git}/archive/{${kind === "rust" ? "commit" : "tag"}}.tar.gz"
 archive_root = "fixture-1.0"
 sha256 = "${"a".repeat(64)}"
+${kind === "rust" ? '[updates]\nbranch = "main"' : ""}
 [build]
 toolchain = "${kind}"
 `,
@@ -97,7 +98,13 @@ toolchain = "${kind}"
               capture: () => Promise.resolve("ok"),
             });
           },
-          downloadVerified: async (_url: string, path: string) => {
+          downloadVerified: async (url: string, path: string) => {
+            deepStrictEqual(
+              url,
+              `https://example.invalid/fixture/archive/${
+                kind === "rust" ? "c".repeat(40) : "v1.0"
+              }.tar.gz`,
+            );
             await touch(path);
           },
           capture: (command: string, args: string[]) => {
