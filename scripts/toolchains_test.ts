@@ -2,6 +2,7 @@ import { deepStrictEqual, ok } from "node:assert/strict";
 import { join } from "node:path";
 import { loadGoToolchainConfig, loadRustToolchainConfig } from "./config.ts";
 import { installRustComponent } from "./toolchains.ts";
+import { denoDir, makeSandbox } from "./test-harness.ts";
 
 Deno.test("toolchains: Rust payload copy preserves target files, symlinks and modes without execution", async () => {
   const root = await Deno.makeTempDir({ prefix: "aptrepo-rust-test-" });
@@ -38,24 +39,16 @@ Deno.test("toolchains: Rust payload copy preserves target files, symlinks and mo
   }
 });
 
-const project = new URL("../", import.meta.url).pathname;
-
 // The real setup entrypoints use fake download/archive/packaging commands in an
 // isolated project/cache. No toolchain archive or Debian package is built.
 Deno.test("setup-go/setup-rust: serial target packaging plus native vendoring tools on either host", async () => {
-  const denoInfo = await new Deno.Command(Deno.execPath(), {
-    args: ["info", "--json"],
-    stdout: "piped",
-  }).output();
-  const denoDir = JSON.parse(new TextDecoder().decode(denoInfo.stdout)).denoDir;
-  const root = await Deno.makeTempDir({ prefix: "aptrepo-setup-test-" });
+  const sandbox = await makeSandbox("aptrepo-setup-test-", [
+    "scripts",
+    "toolchains",
+  ]);
+  const { root, bin } = sandbox;
+  const sharedDenoDir = await denoDir();
   try {
-    for (const dir of ["scripts", "toolchains"]) {
-      const status = await new Deno.Command("cp", {
-        args: ["-R", join(project, dir), root],
-      }).output();
-      ok(status.success);
-    }
     const go = await loadGoToolchainConfig(root);
     const rust = await loadRustToolchainConfig(root);
     const checksums: Record<string, string> = {};
@@ -70,8 +63,6 @@ Deno.test("setup-go/setup-rust: serial target packaging plus native vendoring to
         ] = rust.architectures[arch].sha256[component];
       }
     }
-    const bin = join(root, "bin");
-    await Deno.mkdir(bin);
     const stub =
       `#!/usr/bin/env -S ${Deno.execPath()} run --cached-only --allow-read --allow-write --allow-env=MOCK_HOST,MOCK_LOG
 import { basename, dirname, join } from "node:path";
@@ -122,14 +113,13 @@ else if (command === "sha256sum") {
     for (
       const name of ["dpkg", "curl", "sha256sum", "tar", "dpkg-deb", "unshare"]
     ) {
-      await Deno.writeTextFile(join(bin, name), stub);
-      await Deno.chmod(join(bin, name), 0o755);
+      await sandbox.install(name, stub);
     }
     const log = join(root, "log");
     for (const host of ["amd64", "arm64"] as const) {
       const env = {
         PATH: `${bin}:${Deno.env.get("PATH")}`,
-        DENO_DIR: denoDir,
+        DENO_DIR: sharedDenoDir,
         XDG_CACHE_HOME: join(root, "cache"),
         MOCK_HOST: host,
         MOCK_LOG: log,

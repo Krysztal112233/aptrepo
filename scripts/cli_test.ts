@@ -1,8 +1,8 @@
 import { deepStrictEqual, ok, rejects, throws } from "node:assert/strict";
 import { dirname, join } from "node:path";
 import { parseIncrementalArgs } from "./incremental-build.ts";
+import { denoDir, makeSandbox, projectRoot } from "./test-harness.ts";
 
-const project = new URL("../", import.meta.url).pathname;
 const names = [
   "lazygit",
   "himalaya",
@@ -21,7 +21,7 @@ const names = [
 async function command(
   executable: string,
   args: string[],
-  cwd = project,
+  cwd = projectRoot,
   env?: Record<string, string>,
 ) {
   const result = await new Deno.Command(executable, {
@@ -66,7 +66,7 @@ Deno.test("incremental-build: preserve since/dry-run order and validate all argu
   }
 });
 
-Deno.test("Justfile and all twelve package modules: default and explicit forwarding (12x3x2)", async () => {
+Deno.test("Justfile and all twelve package modules: default and explicit forwarding", async () => {
   for (const name of names) {
     const defaultBuild = await command("just", ["--dry-run", `${name}::build`]);
     ok(defaultBuild.includes(`./packages/${name}/build.ts 'trixie' 'all'`));
@@ -162,7 +162,7 @@ Deno.test("Justfile and all twelve package modules: default and explicit forward
   ) {
     const invalid = await new Deno.Command("just", {
       args: ["d2::build", ...args],
-      cwd: project,
+      cwd: projectRoot,
       stdout: "piped",
       stderr: "piped",
     }).output();
@@ -180,18 +180,13 @@ Deno.test("Justfile and all twelve package modules: default and explicit forward
 });
 
 Deno.test("incremental-build: real entrypoint forwards targets serially, dry-run needs no chroots", async () => {
-  const denoInfo = await new Deno.Command(Deno.execPath(), {
-    args: ["info", "--json"],
-    stdout: "piped",
-  }).output();
-  const denoDir = JSON.parse(new TextDecoder().decode(denoInfo.stdout)).denoDir;
-  const root = await Deno.makeTempDir({ prefix: "aptrepo-cli-test-" });
+  const sandbox = await makeSandbox("aptrepo-cli-test-", [
+    "scripts",
+    "packages",
+    "toolchains",
+  ]);
+  const { root, bin } = sandbox;
   try {
-    for (const path of ["scripts", "packages", "toolchains"]) {
-      await command("cp", ["-R", join(project, path), root]);
-    }
-    const bin = join(root, "bin");
-    await Deno.mkdir(bin);
     const log = join(root, "calls");
     for (
       const [name, body] of Object.entries({
@@ -200,13 +195,11 @@ Deno.test("incremental-build: real entrypoint forwards targets serially, dry-run
         just: `printf '%s\\n' "$*" >> '${log}'`,
       })
     ) {
-      const path = join(bin, name);
-      await Deno.writeTextFile(path, `#!/bin/sh\nset -eu\n${body}\n`);
-      await Deno.chmod(path, 0o755);
+      await sandbox.installSh(name, body);
     }
     const env = {
       PATH: `${bin}:${Deno.env.get("PATH")}`,
-      DENO_DIR: denoDir,
+      DENO_DIR: await denoDir(),
       XDG_CACHE_HOME: join(root, "cache"),
     };
     for (const arch of ["all", "amd64"]) {
@@ -279,18 +272,14 @@ async function withPreflightEntrypoints(
     ) => Promise<{ success: boolean; output: string; calls: string[] }>;
   }) => Promise<void>,
 ) {
-  const info = JSON.parse(
-    await command(Deno.execPath(), ["info", "--json"]),
-  );
-  const root = await Deno.makeTempDir({
-    prefix: "aptrepo-proc-entrypoint-test-",
-  });
+  const sandbox = await makeSandbox("aptrepo-proc-entrypoint-test-", [
+    "scripts",
+    "packages",
+    "toolchains",
+  ]);
+  const { root, bin } = sandbox;
+  const sharedDenoDir = await denoDir();
   try {
-    for (const path of ["scripts", "packages", "toolchains"]) {
-      await command("cp", ["-R", join(project, path), root]);
-    }
-    const bin = join(root, "bin");
-    await Deno.mkdir(bin);
     await Deno.symlink(Deno.execPath(), join(bin, "deno"));
     await Deno.symlink("/usr/bin/dirname", join(bin, "dirname"));
     const cache = join(root, "cache");
@@ -308,11 +297,7 @@ async function withPreflightEntrypoints(
       }
     }
     const log = join(root, "calls");
-    const install = async (name: string, body: string) => {
-      const path = join(bin, name);
-      await Deno.writeTextFile(path, `#!/bin/sh\nset -eu\n${body}\n`);
-      await Deno.chmod(path, 0o755);
-    };
+    const install = sandbox.installSh;
     await install(
       "git",
       'case "$1" in log) printf "scripts/package-build.ts\\n";; status) :;; *) exit 91;; esac',
@@ -369,7 +354,7 @@ printf 'arch-test %s\\n' "$1" >> "$PROBE_LOG"
 ${failure === "arch-test-failure" ? "exit 95" : "echo ok"}`,
         );
         if (failure === "missing-cat") await Deno.remove(join(bin, "cat"));
-        if (failure === "missing-arch-test" || failure === "missing-cat") {
+        if (failure === "missing-arch-test") {
           await Deno.remove(join(bin, "arch-test"));
         }
         const result = await new Deno.Command(join(root, entrypoint), {
@@ -379,7 +364,7 @@ ${failure === "arch-test-failure" ? "exit 95" : "echo ok"}`,
           env: {
             HOME: root,
             XDG_CACHE_HOME: cache,
-            DENO_DIR: info.denoDir,
+            DENO_DIR: sharedDenoDir,
             DENO_NO_UPDATE_CHECK: "1",
             DENO_NO_PROMPT: "1",
             PATH: bin,
@@ -406,7 +391,7 @@ ${failure === "arch-test-failure" ? "exit 95" : "echo ok"}`,
   }
 }
 
-Deno.test("build-targets: actual restricted shebang rejects foreign selections and bypasses native", async () => {
+Deno.test("build-targets entrypoint: rejects foreign selections and bypasses binfmt probes for native builds", async () => {
   await withPreflightEntrypoints(async ({ invoke }) => {
     for (const host of ["amd64", "arm64"] as const) {
       // arm64 and riscv64 are outside the amd64-only build matrix on any
@@ -450,7 +435,7 @@ Deno.test("build-targets: actual restricted shebang rejects foreign selections a
   });
 });
 
-Deno.test("incremental-build: actual restricted importer preflights default all before dispatch", async () => {
+Deno.test("incremental-build entrypoint: preflights the default selection before dispatch", async () => {
   await withPreflightEntrypoints(async ({ invoke }) => {
     const incremental = await invoke("scripts/incremental-build.ts", [
       "yesterday",
@@ -462,7 +447,7 @@ Deno.test("incremental-build: actual restricted importer preflights default all 
   });
 });
 
-Deno.test("d2: actual restricted importer preflights default all before toolchain checks", async () => {
+Deno.test("d2 entrypoint: preflights the default selection before toolchain checks", async () => {
   await withPreflightEntrypoints(async ({ invoke }) => {
     const pkg = await invoke("packages/d2/build.ts", []);
     ok(!pkg.success, pkg.output);
@@ -473,7 +458,7 @@ Deno.test("d2: actual restricted importer preflights default all before toolchai
   });
 });
 
-Deno.test("build-targets, incremental-build, d2 and setup-sbuild: foreign selections fail closed", async () => {
+Deno.test("build-targets, incremental-build, d2 and setup-sbuild: foreign selections rejected before any probe runs", async () => {
   await withPreflightEntrypoints(async ({ invoke }) => {
     const failures: ProbeFailure[] = [
       "disabled-status",

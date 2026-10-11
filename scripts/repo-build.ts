@@ -92,17 +92,15 @@ async function renderDistributions(
 }
 
 async function includedDebs(suite: string): Promise<Set<string>> {
-  let listing: string;
-  try {
-    listing = await capture("reprepro", [
-      "-Vb",
-      repoDir,
-      "list",
-      suite,
-    ]);
-  } catch {
-    return new Set();
-  }
+  // A suite that was never exported has no dists tree; anything else (a
+  // corrupt db, a real reprepro failure) must surface as an error.
+  if (!(await exists(join(repoDir, "dists", suite)))) return new Set();
+  const listing = await capture("reprepro", [
+    "-Vb",
+    repoDir,
+    "list",
+    suite,
+  ]);
   return new Set(
     listing.split("\n")
       .filter((line) => line.length > 0)

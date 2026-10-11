@@ -9,12 +9,7 @@ import {
   loadRustToolchainConfig,
 } from "./config.ts";
 import { exists, run } from "./runtime.ts";
-import {
-  goDebPath,
-  installedGoRoot,
-  installedRustRoot,
-  rustDebPath,
-} from "./toolchains.ts";
+import { installedToolchainRoot, toolchainDebPath } from "./toolchains.ts";
 
 async function touch(path: string, content = "fixture") {
   await Deno.mkdir(dirname(path), { recursive: true });
@@ -68,12 +63,8 @@ toolchain = "${kind}"
           ? await loadGoToolchainConfig(root)
           : await loadRustToolchainConfig(root);
         const debPath = (arch: DebianArchitecture) =>
-          config.kind === "go"
-            ? goDebPath(root, arch, config)
-            : rustDebPath(root, arch, config);
-        const installedRoot = config.kind === "go"
-          ? installedGoRoot(cache, host, config)
-          : installedRustRoot(cache, host, config);
+          toolchainDebPath(root, arch, config);
+        const installedRoot = installedToolchainRoot(cache, host, config);
         // The only extracted executable is host-native. Targets have only .debs.
         const vendor = join(
           installedRoot,

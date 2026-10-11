@@ -4,6 +4,7 @@ import { join } from "node:path";
 // @ts-types="npm:@types/mustache@4"
 import Mustache from "npm:mustache@4";
 
+// Debian templates and reprepro conf must render verbatim, not HTML-escaped.
 Mustache.escape = (text: string): string => text;
 
 const decoder = new TextDecoder();

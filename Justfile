@@ -66,7 +66,7 @@ build-all arch="all":
 
 # ---- Incremental build ----
 
-# Incremental build: only build packages changed in commits or the working tree since the given time (default: 24h)
+# Only build packages changed in commits or the working tree since the given time (default: 24h)
 build-changed since="24 hours ago" arch="all":
     ./scripts/incremental-build.ts {{quote(since)}} {{quote(arch)}}
 

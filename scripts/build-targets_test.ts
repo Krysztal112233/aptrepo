@@ -1,4 +1,5 @@
 import { deepStrictEqual, rejects, throws } from "node:assert/strict";
+import { supportedSuites } from "./config.ts";
 import {
   parseBuildArgs,
   parseSelection,
@@ -6,7 +7,6 @@ import {
   preflightBuild,
   preflightForeignExecution,
   qemuEmulator,
-  suites,
   suitesForSelection,
   targetArchitectures,
   toolchainArchitectures,
@@ -18,7 +18,7 @@ Deno.test("build-targets: defaults, explicit targets, host toolchains", () => {
     "amd64",
   ]);
   deepStrictEqual(targetArchitectures("all", "bookworm"), ["amd64"]);
-  for (const suite of suites) {
+  for (const suite of supportedSuites) {
     deepStrictEqual(parseBuildArgs([suite, "amd64"]), {
       suite,
       selection: "amd64",
@@ -49,9 +49,9 @@ Deno.test("build-targets: defaults, explicit targets, host toolchains", () => {
       host === "amd64" ? ["amd64"] : ["amd64", "arm64"],
     );
   }
-  deepStrictEqual(suitesForSelection("all"), [...suites]);
+  deepStrictEqual(suitesForSelection("all"), [...supportedSuites]);
   deepStrictEqual(suitesForSelection("riscv64"), []);
-  deepStrictEqual(suitesForSelection("amd64"), [...suites]);
+  deepStrictEqual(suitesForSelection("amd64"), [...supportedSuites]);
   deepStrictEqual(qemuEmulator("amd64"), "qemu-x86_64");
   deepStrictEqual(qemuEmulator("arm64"), "qemu-aarch64");
   deepStrictEqual(qemuEmulator("riscv64"), "qemu-riscv64");
@@ -74,22 +74,25 @@ Deno.test("build-targets: reject malformed or surplus arguments", () => {
 
 Deno.test("build-targets: check every chroot before foreign execution", async () => {
   const checked: string[] = [];
-  await rejects(() =>
-    preflightBuild(suites, "all", "amd64", "/cache", {
-      exists: (path) => {
-        checked.push(path);
-        return Promise.resolve(!path.endsWith("forky-amd64.tar.zst"));
-      },
-      readTextFile: () => {
-        throw new Error("must not probe yet");
-      },
-      capture: () => {
-        throw new Error("must not execute yet");
-      },
-    }), /just setup-sbuild forky amd64/);
+  await rejects(
+    () =>
+      preflightBuild(supportedSuites, "all", "amd64", "/cache", {
+        exists: (path) => {
+          checked.push(path);
+          return Promise.resolve(!path.endsWith("forky-amd64.tar.zst"));
+        },
+        readTextFile: () => {
+          throw new Error("must not probe yet");
+        },
+        capture: () => {
+          throw new Error("must not execute yet");
+        },
+      }),
+    /just setup-sbuild forky amd64/,
+  );
   deepStrictEqual(
     checked,
-    suites.flatMap((suite) =>
+    supportedSuites.flatMap((suite) =>
       targetArchitectures("all", suite).map((arch) =>
         `/cache/sbuild/${suite}-${arch}.tar.zst`
       )

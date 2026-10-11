@@ -16,7 +16,9 @@ for cmd in \
 	mmdebstrap \
 	sbuild \
 	reprepro \
-	gpg; do
+	gpg \
+	git \
+	just; do
 	if command -v "$cmd" >/dev/null 2>&1; then
 		printf '  ok %s\n' "$cmd"
 	else

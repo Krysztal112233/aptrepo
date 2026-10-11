@@ -4,6 +4,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   type DebianArchitecture,
+  type DebianSuite,
   loadGoToolchainConfig,
   loadPackageConfig,
   loadRustToolchainConfig,
@@ -18,35 +19,29 @@ import {
   renderDebianTemplate,
   run,
 } from "./runtime.ts";
-import {
-  goDebPath,
-  installedGoRoot,
-  installedRustRoot,
-  rustDebPath,
-} from "./toolchains.ts";
+import { installedToolchainRoot, toolchainDebPath } from "./toolchains.ts";
 
 import {
-  cacheHome as getCacheHome,
+  cacheHome,
   chrootPath,
   hostArchitecture,
   parseBuildArgs,
   preflightBuild,
-  type Suite,
   targetArchitectures,
 } from "./build-targets.ts";
 
-const versionSuffixes = new Map([
-  ["bookworm", "deb12u1"],
-  ["trixie", "deb13u1"],
-  ["forky", "deb14u1"],
-]);
+const versionSuffixes: Record<DebianSuite, string> = {
+  bookworm: "deb12u1",
+  trixie: "deb13u1",
+  forky: "deb14u1",
+};
 
 const buildRuntime = {
   capture,
   run,
   downloadVerified,
   hostArchitecture,
-  cacheHome: getCacheHome,
+  cacheHome,
   preflightBuild,
 };
 
@@ -125,13 +120,13 @@ export async function buildPackage(
 
 async function buildTarget(
   packageModuleUrl: string,
-  suite: Suite,
+  suite: DebianSuite,
   architecture: DebianArchitecture,
   hostArchitecture: DebianArchitecture,
   cacheHome: string,
   runtime: typeof buildRuntime,
 ): Promise<void> {
-  const versionSuffix = versionSuffixes.get(suite)!;
+  const versionSuffix = versionSuffixes[suite];
   const packageDir = dirname(fileURLToPath(packageModuleUrl));
   const projectDir = resolve(packageDir, "../..");
   const packageConfig = await loadPackageConfig(packageDir);
@@ -282,16 +277,25 @@ const cmakeDepsLinuxSkips = new Set([
   "WIN32YANK_X86_64",
 ]);
 
+function vendoredOrigPath(
+  environment: BuildEnvironment,
+  identity: string,
+): string {
+  return join(
+    environment.downloadDir,
+    `${environment.packageConfig.name}_${environment.packageConfig.version}.${identity}.orig.tar.gz`,
+  );
+}
+
 function createSystemAdapter(
   environment: BuildEnvironment,
 ): BuildAdapter {
-  const vendoredIdentity = [
-    environment.packageConfig.source.sha256.slice(0, 12),
-    systemVendoringRevision,
-  ].join("-");
-  const vendoredOrig = join(
-    environment.downloadDir,
-    `${environment.packageConfig.name}_${environment.packageConfig.version}.${vendoredIdentity}.orig.tar.gz`,
+  const vendoredOrig = vendoredOrigPath(
+    environment,
+    [
+      environment.packageConfig.source.sha256.slice(0, 12),
+      systemVendoringRevision,
+    ].join("-"),
   );
 
   // The compiler and build tools come from the target chroot's Debian mirror
@@ -302,7 +306,11 @@ function createSystemAdapter(
     controlReplacements: {},
     rulesReplacements: {},
     prepareSource(sourceEnvironment) {
-      return prepareSystemSource(sourceEnvironment, vendoredOrig);
+      return prepareVendoredSource(
+        sourceEnvironment,
+        vendoredOrig,
+        prefetchCmakeDeps,
+      );
     },
   };
 }
@@ -311,34 +319,32 @@ async function createGoAdapter(
   environment: BuildEnvironment,
 ): Promise<BuildAdapter> {
   const config = await loadGoToolchainConfig(environment.projectDir);
-  const goToolchain = goDebPath(
+  const goToolchain = toolchainDebPath(
     environment.projectDir,
     environment.architecture,
     config,
   );
-  const goBin = join(
-    installedGoRoot(
+  const go = join(
+    installedToolchainRoot(
       environment.cacheHome,
       environment.hostArchitecture,
       config,
     ),
     config.installPrefix.slice(1),
-    "bin",
+    "bin/go",
   );
-  const go = join(goBin, "go");
   if (!(await exists(goToolchain)) || !(await exists(go))) {
     throw new Error(
       `Missing Go build toolchain\nRun: just setup-go ${environment.architecture}`,
     );
   }
 
-  const vendoredIdentity = [
-    environment.packageConfig.source.sha256.slice(0, 12),
-    config.fingerprint.slice(0, 12),
-  ].join("-");
-  const vendoredOrig = join(
-    environment.downloadDir,
-    `${environment.packageConfig.name}_${environment.packageConfig.version}.${vendoredIdentity}.orig.tar.gz`,
+  const vendoredOrig = vendoredOrigPath(
+    environment,
+    [
+      environment.packageConfig.source.sha256.slice(0, 12),
+      config.fingerprint.slice(0, 12),
+    ].join("-"),
   );
 
   return {
@@ -351,10 +357,10 @@ async function createGoAdapter(
       GO_BINARY_PATH: join(config.installPrefix, "bin"),
     },
     prepareSource(sourceEnvironment) {
-      return prepareGoSource(
+      return prepareVendoredSource(
         sourceEnvironment,
-        go,
         vendoredOrig,
+        (source) => vendorGoModules(source, go),
       );
     },
   };
@@ -364,13 +370,13 @@ async function createRustAdapter(
   environment: BuildEnvironment,
 ): Promise<BuildAdapter> {
   const config = await loadRustToolchainConfig(environment.projectDir);
-  const rustToolchain = rustDebPath(
+  const rustToolchain = toolchainDebPath(
     environment.projectDir,
     environment.architecture,
     config,
   );
   const cargo = join(
-    installedRustRoot(
+    installedToolchainRoot(
       environment.cacheHome,
       environment.hostArchitecture,
       config,
@@ -384,13 +390,12 @@ async function createRustAdapter(
     );
   }
 
-  const vendoredIdentity = [
-    environment.packageConfig.source.sha256.slice(0, 12),
-    config.fingerprint.slice(0, 12),
-  ].join("-");
-  const vendoredOrig = join(
-    environment.downloadDir,
-    `${environment.packageConfig.name}_${environment.packageConfig.version}.${vendoredIdentity}.orig.tar.gz`,
+  const vendoredOrig = vendoredOrigPath(
+    environment,
+    [
+      environment.packageConfig.source.sha256.slice(0, 12),
+      config.fingerprint.slice(0, 12),
+    ].join("-"),
   );
 
   return {
@@ -404,18 +409,25 @@ async function createRustAdapter(
       RUST_BUILD_TUNING: rustBuildTuning,
     },
     prepareSource(sourceEnvironment) {
-      return prepareRustSource(
+      return prepareVendoredSource(
         sourceEnvironment,
-        cargo,
         vendoredOrig,
+        (source) => vendorRustCrates(source, cargo),
       );
     },
   };
 }
 
-async function prepareSystemSource(
+/**
+ * Extract the cached vendored orig tarball when it exists; otherwise extract
+ * the pristine download, run the toolchain's vendoring step, and repack a
+ * deterministic tarball for reuse. Vendoring runs on the host so the sbuild
+ * chroot builds offline.
+ */
+async function prepareVendoredSource(
   environment: SourceEnvironment,
   vendoredOrig: string,
+  vendor?: (environment: SourceEnvironment) => Promise<void>,
 ): Promise<string> {
   if (await exists(vendoredOrig)) {
     await environment.runtime.run("tar", [
@@ -438,14 +450,7 @@ async function prepareSystemSource(
       `${environment.packageConfig.configPath}: archive_root was not found after extraction`,
     );
   }
-
-  // Packages such as neovim download their bundled dependencies at build
-  // time through cmake.deps; pre-fetch those tarballs so the sbuild chroot
-  // still builds offline.
-  const depsManifest = join(environment.sourceDir, "cmake.deps/deps.txt");
-  if (await exists(depsManifest)) {
-    await prefetchCmakeDeps(environment, depsManifest);
-  }
+  await vendor?.(environment);
 
   const temporaryOrig = await Deno.makeTempFile({
     dir: environment.downloadDir,
@@ -477,8 +482,12 @@ async function prepareSystemSource(
  */
 async function prefetchCmakeDeps(
   environment: SourceEnvironment,
-  depsManifest: string,
 ): Promise<void> {
+  // Only packages with build-time downloads (neovim's cmake.deps) carry a
+  // manifest; pre-fetching keeps their chroot build offline.
+  const depsManifest = join(environment.sourceDir, "cmake.deps/deps.txt");
+  if (!(await exists(depsManifest))) return;
+
   const urls = new Map<string, string>();
   const sha256s = new Map<string, string>();
   for (const line of (await Deno.readTextFile(depsManifest)).split("\n")) {
@@ -506,86 +515,20 @@ async function prefetchCmakeDeps(
   }
 }
 
-async function prepareGoSource(
+async function vendorGoModules(
   environment: SourceEnvironment,
   go: string,
-  vendoredOrig: string,
-): Promise<string> {
-  if (await exists(vendoredOrig)) {
-    await environment.runtime.run("tar", [
-      "-xzf",
-      vendoredOrig,
-      "-C",
-      environment.workDir,
-    ]);
-    return vendoredOrig;
-  }
-
-  await environment.runtime.run("tar", [
-    "-xzf",
-    environment.download,
-    "-C",
-    environment.workDir,
-  ]);
-  if (!(await exists(environment.sourceDir))) {
-    throw new Error(
-      `${environment.packageConfig.configPath}: archive_root was not found after extraction`,
-    );
-  }
-
+): Promise<void> {
   const vendorDir = join(environment.sourceDir, "vendor");
   if (!(await exists(vendorDir))) {
     await environment.runtime.run(go, ["mod", "vendor"], environment.sourceDir);
   }
-
-  const temporaryOrig = await Deno.makeTempFile({
-    dir: environment.downloadDir,
-    prefix: `.${environment.packageConfig.name}-orig-`,
-    suffix: ".tar.gz",
-  });
-  await environment.runtime.run("tar", [
-    "--sort=name",
-    "--mtime=@0",
-    "--owner=0",
-    "--group=0",
-    "--numeric-owner",
-    "-czf",
-    temporaryOrig,
-    "-C",
-    environment.workDir,
-    environment.packageConfig.source.archiveRoot,
-  ]);
-  await Deno.rename(temporaryOrig, vendoredOrig);
-  return vendoredOrig;
 }
 
-async function prepareRustSource(
+async function vendorRustCrates(
   environment: SourceEnvironment,
   cargo: string,
-  vendoredOrig: string,
-): Promise<string> {
-  if (await exists(vendoredOrig)) {
-    await environment.runtime.run("tar", [
-      "-xzf",
-      vendoredOrig,
-      "-C",
-      environment.workDir,
-    ]);
-    return vendoredOrig;
-  }
-
-  await environment.runtime.run("tar", [
-    "-xzf",
-    environment.download,
-    "-C",
-    environment.workDir,
-  ]);
-  if (!(await exists(environment.sourceDir))) {
-    throw new Error(
-      `${environment.packageConfig.configPath}: archive_root was not found after extraction`,
-    );
-  }
-
+): Promise<void> {
   const cargoConfig = await environment.runtime.capture(
     cargo,
     ["vendor", "--locked", "--versioned-dirs", "vendor"],
@@ -598,24 +541,4 @@ async function prepareRustSource(
     join(environment.sourceDir, ".cargo/config.toml"),
     cargoConfig,
   );
-
-  const temporaryOrig = await Deno.makeTempFile({
-    dir: environment.downloadDir,
-    prefix: `.${environment.packageConfig.name}-orig-`,
-    suffix: ".tar.gz",
-  });
-  await environment.runtime.run("tar", [
-    "--sort=name",
-    "--mtime=@0",
-    "--owner=0",
-    "--group=0",
-    "--numeric-owner",
-    "-czf",
-    temporaryOrig,
-    "-C",
-    environment.workDir,
-    environment.packageConfig.source.archiveRoot,
-  ]);
-  await Deno.rename(temporaryOrig, vendoredOrig);
-  return vendoredOrig;
 }

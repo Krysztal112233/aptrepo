@@ -3,6 +3,7 @@
 import { join } from "node:path";
 import {
   type DebianArchitecture,
+  type DebianSuite,
   defaultSuiteArchitectures,
   parseArchitecture,
   suiteArchitectures,
@@ -11,8 +12,6 @@ import {
 } from "./config.ts";
 import { capture, exists, requiredEnv } from "./runtime.ts";
 
-export const suites = supportedSuites;
-export type Suite = typeof suites[number];
 export type ArchitectureSelection = "all" | DebianArchitecture;
 
 const qemuEmulators: Record<DebianArchitecture, string> = {
@@ -21,11 +20,11 @@ const qemuEmulators: Record<DebianArchitecture, string> = {
   riscv64: "qemu-riscv64",
 };
 
-export function parseSuite(value: string): Suite {
-  if (!suites.includes(value as Suite)) {
+export function parseSuite(value: string): DebianSuite {
+  if (!(supportedSuites as readonly string[]).includes(value)) {
     throw new Error(`Unsupported Debian release: ${value}`);
   }
-  return value as Suite;
+  return value as DebianSuite;
 }
 
 export function parseSelection(value = "all"): ArchitectureSelection {
@@ -35,7 +34,7 @@ export function parseSelection(value = "all"): ArchitectureSelection {
 
 export function targetArchitectures(
   selection: ArchitectureSelection,
-  suite: Suite = "trixie",
+  suite: DebianSuite = "trixie",
   matrix = defaultSuiteArchitectures,
 ): DebianArchitecture[] {
   const allowed = suiteArchitectures(suite, matrix);
@@ -53,9 +52,9 @@ export function targetArchitectures(
 export function suitesForSelection(
   selection: ArchitectureSelection,
   matrix = defaultSuiteArchitectures,
-): Suite[] {
-  if (selection === "all") return [...suites];
-  return suites.filter((suite) => matrix[suite].includes(selection));
+): DebianSuite[] {
+  if (selection === "all") return [...supportedSuites];
+  return supportedSuites.filter((suite) => matrix[suite].includes(selection));
 }
 
 export function parseBuildArgs(args: string[]) {
@@ -83,7 +82,7 @@ export function toolchainArchitectures(
   host: DebianArchitecture,
 ): DebianArchitecture[] {
   const targets = selection === "all"
-    ? uniqueArchitectures(suites)
+    ? uniqueArchitectures(supportedSuites)
     : [selection];
   return [...new Set([...targets, host])];
 }
@@ -107,7 +106,7 @@ export function cacheHome(): string {
 
 export function chrootPath(
   cache: string,
-  suite: Suite,
+  suite: DebianSuite,
   arch: DebianArchitecture,
 ) {
   return join(cache, "sbuild", `${suite}-${arch}.tar.zst`);
@@ -166,7 +165,7 @@ export async function preflightForeignExecution(
 }
 
 export async function preflightBuild(
-  selectedSuites: readonly Suite[],
+  selectedSuites: readonly DebianSuite[],
   selection: ArchitectureSelection,
   host: DebianArchitecture,
   cache: string,

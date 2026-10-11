@@ -1,7 +1,15 @@
 #!/usr/bin/env -S deno run --allow-env=HOME,XDG_CACHE_HOME --allow-read --allow-write --allow-net --allow-run
 
 import { join } from "node:path";
+import type {
+  DebianArchitecture,
+  GoToolchainConfig,
+  RustToolchainConfig,
+} from "./config.ts";
 import { run } from "./runtime.ts";
+
+/** Compiler toolchains packaged as .debs and extracted for host-side vendoring. */
+export type CompilerToolchainConfig = GoToolchainConfig | RustToolchainConfig;
 
 // Standalone Rust payloads already use prefix-relative paths. Do not run the
 // host-sniffing installer (or any target executable) to package foreign tools.
@@ -17,16 +25,11 @@ export async function installRustComponent(
     await run("cp", ["-a", join(source, entry.name), prefix]);
   }
 }
-import type {
-  DebianArchitecture,
-  GoToolchainConfig,
-  RustToolchainConfig,
-} from "./config.ts";
 
-export function goDebPath(
+export function toolchainDebPath(
   projectDir: string,
   architecture: DebianArchitecture,
-  config: GoToolchainConfig,
+  config: CompilerToolchainConfig,
 ): string {
   return join(
     projectDir,
@@ -35,38 +38,14 @@ export function goDebPath(
   );
 }
 
-export function rustDebPath(
-  projectDir: string,
-  architecture: DebianArchitecture,
-  config: RustToolchainConfig,
-): string {
-  return join(
-    projectDir,
-    "build/toolchains",
-    `${config.packageName}_${config.packageVersion}_${architecture}.deb`,
-  );
-}
-
-export function installedGoRoot(
+export function installedToolchainRoot(
   cacheHome: string,
   architecture: DebianArchitecture,
-  config: GoToolchainConfig,
+  config: CompilerToolchainConfig,
 ): string {
-  const identity = `go-${config.version}-${config.fingerprint.slice(0, 12)}`;
-  return join(
-    cacheHome,
-    "aptrepo/toolchains/installed",
-    identity,
-    architecture,
-  );
-}
-
-export function installedRustRoot(
-  cacheHome: string,
-  architecture: DebianArchitecture,
-  config: RustToolchainConfig,
-): string {
-  const identity = `rust-${config.version}-${config.fingerprint.slice(0, 12)}`;
+  const identity = `${config.kind}-${config.version}-${
+    config.fingerprint.slice(0, 12)
+  }`;
   return join(
     cacheHome,
     "aptrepo/toolchains/installed",

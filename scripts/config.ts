@@ -537,16 +537,7 @@ function readSingleLineString(
 
 function readUrl(table: Table, field: string, configPath: string): string {
   const value = readString(table, field, configPath);
-  try {
-    const url = new URL(value);
-    if (url.protocol !== "https:") {
-      throw new Error("HTTPS is required");
-    }
-  } catch (error) {
-    throw new Error(
-      `${configPath}: invalid ${field}: ${errorMessage(error)}`,
-    );
-  }
+  assertHttpsUrl(value, field, configPath);
   return value.replace(/\/$/, "");
 }
 
@@ -561,8 +552,17 @@ function readResolvedUrl(
     variables,
     configPath,
   );
+  assertHttpsUrl(resolved, field, configPath);
+  return resolved;
+}
+
+function assertHttpsUrl(
+  value: string,
+  field: string,
+  configPath: string,
+): void {
   try {
-    const url = new URL(resolved);
+    const url = new URL(value);
     if (url.protocol !== "https:") {
       throw new Error("HTTPS is required");
     }
@@ -571,7 +571,6 @@ function readResolvedUrl(
       `${configPath}: invalid ${field}: ${errorMessage(error)}`,
     );
   }
-  return resolved;
 }
 
 function readAbsolutePath(
