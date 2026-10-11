@@ -50,6 +50,7 @@ mod d2       "packages/d2/justfile"
 mod neovim   "packages/neovim/justfile"
 mod gix      "packages/gix/justfile"
 mod gleam    "packages/gleam/justfile"
+mod wezterm  "packages/wezterm/justfile"
 
 # ---- Aggregate ----
 
@@ -67,6 +68,7 @@ build-all arch="all":
     @just neovim::build-all {{quote(arch)}}
     @just gix::build-all {{quote(arch)}}
     @just gleam::build-all {{quote(arch)}}
+    @just wezterm::build-all {{quote(arch)}}
 
 # ---- Incremental build ----
 

@@ -3,17 +3,19 @@ import { join } from "node:path";
 import { classify, parseTagRefs, stableTagPattern } from "./check-updates.ts";
 import { denoDir, makeSandbox } from "./test-harness.ts";
 
-Deno.test("check-updates: tag template compiles to a stable-version matcher", () => {
+Deno.test("check-updates: tag template compiles to a version-tag matcher", () => {
   const vPrefixed = stableTagPattern("v{version}");
   ok(vPrefixed.test("v0.66.0"));
-  ok(!vPrefixed.test("v0.66.0-rc.1"));
   ok(!vPrefixed.test("gix-v0.66.0"));
   ok(!vPrefixed.test("nightly"));
-  ok(!vPrefixed.test("v0.66"));
 
   const bare = stableTagPattern("{version}");
   ok(bare.test("0.12.9"));
   ok(!bare.test("v0.12.9"));
+  // Date-shaped tags (wezterm) match the loose version shape; per-crate
+  // tags starting with letters do not.
+  ok(bare.test("20240203-110809-5046fc22"));
+  ok(!bare.test("wezterm-ssh-0.3.0"));
 
   throws(() => stableTagPattern("{tag}"));
   throws(() => stableTagPattern("v{version}{version}"));
@@ -45,6 +47,23 @@ Deno.test("check-updates: classify by position in the version-sorted tag list", 
   deepStrictEqual(
     classify("v0.9.0", ["v0.10.0-rc.1", "v0.9.0"], pattern),
     { latest: "v0.9.0", status: "up to date" },
+  );
+  deepStrictEqual(
+    classify(
+      "0.12.9",
+      ["0.13.0-beta.1", "0.12.9"],
+      stableTagPattern("{version}"),
+    ),
+    { latest: "0.12.9", status: "up to date" },
+  );
+  // Date-shaped versions (wezterm) classify like any other series.
+  deepStrictEqual(
+    classify(
+      "20240203-110809-5046fc22",
+      ["20240203-110809-5046fc22", "20240128-202157-1e552d76"],
+      stableTagPattern("{version}"),
+    ),
+    { latest: "20240203-110809-5046fc22", status: "up to date" },
   );
   // A pinned tag absent from the remote no longer has a commit there.
   deepStrictEqual(
@@ -132,7 +151,7 @@ Deno.test("check-updates: entrypoint classifies pinned tags end to end", async (
     ok(!all.success, all.output);
     ok(all.output.includes("d2"), all.output);
     ok(all.output.includes("lazygit"), all.output);
-    ok(all.output.includes("12 packages"), all.output);
+    ok(all.output.includes("13 packages"), all.output);
   } finally {
     await Deno.remove(root, { recursive: true });
   }

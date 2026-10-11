@@ -12,6 +12,7 @@ import {
 } from "./config.ts";
 import {
   capture,
+  checksum,
   copyBuildArtifacts,
   downloadVerified,
   exists,
@@ -51,6 +52,11 @@ const buildRuntime = {
  * cached vendored orig tarballs are regenerated.
  */
 const systemVendoringRevision = "sys1";
+
+/** Path of a package's optional pre-vendor hook (see vendorRustCrates). */
+function preVendorPath(environment: BuildEnvironment): string {
+  return join(dirname(environment.packageConfig.configPath), "pre-vendor");
+}
 
 interface BuildEnvironment {
   runtime: typeof buildRuntime;
@@ -390,11 +396,17 @@ async function createRustAdapter(
     );
   }
 
+  const preVendor = preVendorPath(environment);
   const vendoredOrig = vendoredOrigPath(
     environment,
     [
       environment.packageConfig.source.sha256.slice(0, 12),
       config.fingerprint.slice(0, 12),
+      // The pre-vendor script changes the vendored output; its checksum keeps
+      // the cache honest across edits.
+      ...(await exists(preVendor)
+        ? [(await checksum(preVendor)).slice(0, 12)]
+        : []),
     ].join("-"),
   );
 
@@ -529,16 +541,31 @@ async function vendorRustCrates(
   environment: SourceEnvironment,
   cargo: string,
 ): Promise<void> {
+  // Packages needing host-side source fixes before vendoring (wezterm's
+  // stale lockfile) ship an executable pre-vendor script: $1 is the
+  // toolchain's cargo, cwd is the source tree.
+  const preVendor = preVendorPath(environment);
+  if (await exists(preVendor)) {
+    await environment.runtime.run(preVendor, [cargo], environment.sourceDir);
+  }
+
   const cargoConfig = await environment.runtime.capture(
     cargo,
     ["vendor", "--locked", "--versioned-dirs", "vendor"],
     environment.sourceDir,
   );
-  await Deno.mkdir(join(environment.sourceDir, ".cargo"), {
+  const cargoDir = join(environment.sourceDir, ".cargo");
+  await Deno.mkdir(cargoDir, {
     recursive: true,
   });
-  await Deno.writeTextFile(
-    join(environment.sourceDir, ".cargo/config.toml"),
-    cargoConfig,
-  );
+  // Cargo prefers the extensionless config when both exist; append to
+  // whichever one the upstream tarball ships (wezterm ships .cargo/config).
+  const legacyConfig = join(cargoDir, "config");
+  if (await exists(legacyConfig)) {
+    await Deno.writeTextFile(legacyConfig, `\n${cargoConfig}`, {
+      append: true,
+    });
+  } else {
+    await Deno.writeTextFile(join(cargoDir, "config.toml"), cargoConfig);
+  }
 }

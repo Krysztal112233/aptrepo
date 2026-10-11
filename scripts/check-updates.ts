@@ -10,9 +10,10 @@ function escapeRegExp(text: string): string {
 }
 
 /**
- * Compile a source.tag template into an anchored matcher for stable
- * three-part version tags: "v{version}" matches "v0.66.0" but not "nightly",
- * "v0.66.0-rc.1" or "gix-v0.66.0".
+ * Compile a source.tag template into an anchored matcher for upstream version
+ * tags. The version part must start with a digit but is otherwise loose: it
+ * covers both dotted ("0.66.0") and date-shaped ("20240203-110809-5046fc22")
+ * schemes. Prerelease suffixes are filtered in classify, not here.
  */
 export function stableTagPattern(template: string): RegExp {
   const parts = template.split("{version}");
@@ -20,8 +21,11 @@ export function stableTagPattern(template: string): RegExp {
     throw new Error(`unsupported tag template: ${template}`);
   }
   const [prefix, suffix] = parts.map(escapeRegExp);
-  return new RegExp(`^${prefix}\\d+\\.\\d+\\.\\d+${suffix}$`);
+  return new RegExp(`^${prefix}([0-9][0-9A-Za-z.+-]*)${suffix}$`);
 }
+
+/** A hyphen-introduced prerelease marker, e.g. the "-rc.1" in "v0.66.0-rc.1". */
+const PRERELEASE_MARKER = /-(rc|alpha|beta|pre|dev)/i;
 
 export function parseTagRefs(output: string): string[] {
   const tags: string[] = [];
@@ -53,7 +57,10 @@ export function classify(
   tags: string[],
   pattern: RegExp,
 ): Classification {
-  const latest = tags.find((tag) => pattern.test(tag)) ?? null;
+  const latest = tags.find((tag) => {
+    const version = tag.match(pattern)?.[1];
+    return version !== undefined && !PRERELEASE_MARKER.test(version);
+  }) ?? null;
   if (!tags.includes(pinnedTag)) {
     return { latest, status: "tag missing upstream" };
   }

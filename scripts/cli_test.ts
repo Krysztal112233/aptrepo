@@ -16,6 +16,7 @@ const names = [
   "neovim",
   "gix",
   "gleam",
+  "wezterm",
 ];
 
 async function command(
@@ -66,7 +67,7 @@ Deno.test("incremental-build: preserve since/dry-run order and validate all argu
   }
 });
 
-Deno.test("Justfile and all twelve package modules: default and explicit forwarding", async () => {
+Deno.test("Justfile and every package module: default and explicit forwarding", async () => {
   for (const name of names) {
     const defaultBuild = await command("just", ["--dry-run", `${name}::build`]);
     ok(defaultBuild.includes(`./packages/${name}/build.ts 'trixie' 'all'`));

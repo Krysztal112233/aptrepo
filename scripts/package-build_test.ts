@@ -59,6 +59,8 @@ toolchain = "${kind}"
             new URL(`../toolchains/${kind}.toml`, import.meta.url),
           ),
         );
+        // Present for both toolchains; only the rust adapter may run it.
+        await touch(join(packageDir, "pre-vendor"));
         const config = kind === "go"
           ? await loadGoToolchainConfig(root)
           : await loadRustToolchainConfig(root);
@@ -99,6 +101,9 @@ toolchain = "${kind}"
             await touch(path);
           },
           capture: (command: string, args: string[]) => {
+            if (command === "sha256sum") {
+              return Promise.resolve(`${"b".repeat(64)}  ${args[0]}`);
+            }
             deepStrictEqual([command, ...args], [
               vendor,
               "vendor",
@@ -127,6 +132,9 @@ toolchain = "${kind}"
               }
             } else if (command === "cp") {
               await run(command, args, cwd);
+            } else if (command.endsWith("/pre-vendor")) {
+              deepStrictEqual(args, [vendor]);
+              events.push("pre-vendor");
             } else if (command === "dpkg-buildpackage") {
               deepStrictEqual(args, [
                 "--build=source",
@@ -205,6 +213,7 @@ toolchain = "${kind}"
         await buildPackage(moduleUrl, undefined, undefined, runtime);
         deepStrictEqual(events, [
           "preflight",
+          ...(kind === "rust" ? ["pre-vendor"] : []),
           "source",
           "amd64",
         ]);

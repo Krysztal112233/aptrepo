@@ -1,0 +1,38 @@
+Source: wezterm
+Section: utils
+Priority: optional
+Maintainer: Krysztal Huang <krysztal.huang@outlook.com>
+Build-Depends:
+ {{RUST_PACKAGE_NAME}} (= {{RUST_PACKAGE_VERSION}}),
+ cmake,
+ debhelper-compat (= 13),
+ g++,
+ libegl1-mesa-dev,
+ libfontconfig1-dev,
+ libssl-dev,
+ libwayland-dev,
+ libx11-xcb-dev,
+ libxcb-ewmh-dev,
+ libxcb-icccm4-dev,
+ libxcb-image0-dev,
+ libxcb-keysyms1-dev,
+ libxcb-randr0-dev,
+ libxcb-render0-dev,
+ libxcb-util-dev | libxcb-util0-dev,
+ libxcb-xkb-dev,
+ libxkbcommon-dev,
+ libxkbcommon-x11-dev,
+ python3,
+ zlib1g-dev,
+Standards-Version: 4.7.2
+Homepage: {{SOURCE_GIT}}
+Rules-Requires-Root: no
+
+Package: wezterm
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}, xdg-utils
+Provides: x-terminal-emulator
+Description: GPU-accelerated terminal emulator and multiplexer
+ WezTerm is a GPU-accelerated cross-platform terminal emulator with support
+ for ligatures, hyperlinks, tabs, multiplexing, and Lua scripting, usable
+ as a local terminal or as a client for remote multiplexing sessions.

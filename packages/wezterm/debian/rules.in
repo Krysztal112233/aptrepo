@@ -1,0 +1,38 @@
+#!/usr/bin/make -f
+
+export PATH := {{RUST_INSTALL_PREFIX}}/bin:$(PATH)
+export CARGO_HOME := $(CURDIR)/debian/.cargo-home
+export CARGO_NET_OFFLINE := true
+export CARGO_TARGET_DIR := $(CURDIR)/target
+
+{{RUST_BUILD_TUNING}}
+
+include /usr/share/dpkg/pkg-info.mk
+
+# wezterm's 2024 codebase trips deny-by-default rust_2024_compatibility
+# lints (never-type fallback) on modern rustc; cap lints to warnings.
+export RUSTFLAGS := --cap-lints warn
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	echo "$(DEB_VERSION_UPSTREAM)" > .tag
+	cargo build --release --locked --offline -p wezterm-gui -p wezterm -p wezterm-mux-server -p strip-ansi-escapes
+	mkdir -p debian/generated
+	cp assets/shell-completion/bash debian/generated/wezterm.bash
+	cp assets/shell-completion/fish debian/generated/wezterm.fish
+	cp assets/shell-completion/zsh debian/generated/_wezterm
+	cp assets/wezterm.desktop debian/generated/org.wezfurlong.wezterm.desktop
+	cp assets/icon/terminal.png debian/generated/org.wezfurlong.wezterm.png
+	cp assets/wezterm.appdata.xml debian/generated/org.wezfurlong.wezterm.appdata.xml
+
+override_dh_auto_clean:
+	rm -rf target debian/.cargo-home debian/generated
+	rm -f .tag
+
+override_dh_strip:
+	dh_strip --no-automatic-dbgsym
+
+override_dh_clean:
+	dh_clean -Xvendor/

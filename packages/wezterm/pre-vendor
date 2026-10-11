@@ -1,0 +1,37 @@
+#!/bin/sh
+# Two host-side fixes before vendoring ($1 = toolchain cargo, cwd = source
+# tree):
+#
+# 1. The 2024 lockfile pins time 0.3.31, which no longer compiles on
+#    rustc >= 1.80 (E0282); refresh it.
+# 2. GitHub tag tarballs omit git submodule contents, but deps/freetype and
+#    deps/harfbuzz unconditionally compile their bundled C sources. Fetch the
+#    four submodule trees at the SHAs pinned by the tag's gitlinks, verified
+#    against the hashes below.
+set -eu
+
+"$1" update -p time@0.3.31 --precise 0.3.36
+
+TMP=""
+trap 'rm -f "$TMP"' EXIT
+fetch() { # <org/repo> <sha> <sha256> <dest>
+    TMP=$(mktemp)
+    curl -sfL "https://codeload.github.com/$1/tar.gz/$2" -o "$TMP"
+    echo "$3  $TMP" | sha256sum -c - > /dev/null
+    mkdir -p "$4"
+    tar -xzf "$TMP" --strip-components=1 -C "$4"
+    rm -f "$TMP"
+}
+
+fetch wez/freetype2 e4586d960f339cf75e2e0b34aee30a0ed8353c0d \
+    2ca70adbd15be23569762319f7cac3cd92720f6042417916540bd120f18102f5 \
+    deps/freetype/freetype2
+fetch glennrp/libpng 8439534daa1d3a5705ba92e653eda9251246dd61 \
+    c73af438385b725238443ed9c23065b3ed614e04b24cd4b9560f1a587ce7f20f \
+    deps/freetype/libpng
+fetch madler/zlib cacf7f1d4e3d44d871b605da3b647f07d718623f \
+    6d4d6640ca3121620995ee255945161821218752b551a1a180f4215f7d124d45 \
+    deps/freetype/zlib
+fetch harfbuzz/harfbuzz 894a1f72ee93a1fd8dc1d9218cb3fd8f048be29a \
+    17eda8a9861d347a6e95cd2b3112301ce90dcc649b0e96623cc89c6ca4180e66 \
+    deps/harfbuzz/harfbuzz

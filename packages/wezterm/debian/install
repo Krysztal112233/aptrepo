@@ -1,0 +1,10 @@
+target/release/wezterm usr/bin
+target/release/wezterm-gui usr/bin
+target/release/wezterm-mux-server usr/bin
+target/release/strip-ansi-escapes usr/bin
+debian/generated/wezterm.bash usr/share/bash-completion/completions
+debian/generated/wezterm.fish usr/share/fish/vendor_completions.d
+debian/generated/_wezterm usr/share/zsh/vendor-completions
+debian/generated/org.wezfurlong.wezterm.desktop usr/share/applications
+debian/generated/org.wezfurlong.wezterm.png usr/share/icons/hicolor/128x128/apps
+debian/generated/org.wezfurlong.wezterm.appdata.xml usr/share/metainfo

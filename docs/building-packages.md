@@ -1,6 +1,6 @@
 # Building Packages
 
-After [setting up the build environment](build-environment.md), build all twelve
+After [setting up the build environment](build-environment.md), build all
 packages for every suite. The build matrix is **amd64-only**
 (`scripts/config.ts`); `repository.toml` still publishes the wider per-suite
 architecture matrix for previously built foreign artifacts:
@@ -18,22 +18,29 @@ just d2::build-all                # every suite, amd64
 ```
 
 Each package's direct script has the same `[suite] [all|amd64]` selection;
-foreign architecture names still parse but are rejected by the amd64-only
-build matrix. Just also sets up the appropriate toolchain automatically;
-direct scripts expect it already prepared:
+foreign architecture names still parse but are rejected by the amd64-only build
+matrix. Just also sets up the appropriate toolchain automatically; direct
+scripts expect it already prepared:
 
 ```sh
 ./scripts/setup-go.ts amd64
 ./packages/d2/build.ts trixie amd64
 ```
 
-Go and Rust packages build with a downloaded compiler that is injected into
-the sbuild chroot as an extra package. The `system` toolchain (currently
-neovim) instead takes its compiler and build tools from the target chroot's
-own Debian mirror via ordinary `Build-Depends`, so there is no setup step.
-Packages with build-time downloads (neovim's bundled `cmake.deps`) have them
-pre-fetched and vendored into the orig tarball at package time, keeping the
-chroot build offline.
+Go and Rust packages build with a downloaded compiler that is injected into the
+sbuild chroot as an extra package. The `system` toolchain (currently neovim)
+instead takes its compiler and build tools from the target chroot's own Debian
+mirror via ordinary `Build-Depends`, so there is no setup step. Packages with
+build-time downloads (neovim's bundled `cmake.deps`) have them pre-fetched and
+vendored into the orig tarball at package time, keeping the chroot build
+offline.
+
+Rust packages that need source-tree fixes before vendoring can ship an
+executable `packages/<name>/pre-vendor`: it runs on the host after extraction
+and before `cargo vendor`, with the toolchain's cargo as `$1` and the source
+tree as the working directory. The script's checksum is part of the vendored
+tarball identity, so edits invalidate the cache. (wezterm uses this to refresh
+its 2024 `time` lockfile entry, which no longer compiles on newer rustc.)
 
 Incremental builds retain the first `since` argument and accept architecture
 selection second. They consider both commits and working-tree changes:
@@ -60,15 +67,15 @@ just check-updates d2     # one package
 ```
 
 The recipe lists each `source.git` remote's tags with `git ls-remote`
-(version-sorted, no downloads) and reports packages whose pinned `source.tag`
-is not the newest stable match or no longer exists upstream. Updates are
+(version-sorted, no downloads) and reports packages whose pinned `source.tag` is
+not the newest stable match or no longer exists upstream. Updates are
 informational; missing tags and lookup failures exit non-zero.
 
 Build outputs are written to `build/<suite>/`, with `_<arch>.deb`,
 `_<arch>.changes`, and `_<arch>.buildinfo` names. The emulated-native foreign
 machinery (matching compiler packages, emulated target execution inside sbuild
-chroots, host-native source vendoring) remains in place and is documented in
-the environment guide; it is simply not reachable while the build matrix is
+chroots, host-native source vendoring) remains in place and is documented in the
+environment guide; it is simply not reachable while the build matrix is
 amd64-only. No true cross-target Debian rules are introduced.
 
 Do not run independent builders simultaneously in the same workdir/cache; shared
