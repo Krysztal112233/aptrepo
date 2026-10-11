@@ -1,6 +1,6 @@
 [package]
 name = "neovim"
-version = "0.12.5"
+version = "0.12.6"
 debian_revision = "1"
 
 [source]
@@ -8,7 +8,7 @@ git = "https://github.com/neovim/neovim"
 tag = "v{version}"
 archive = "{git}/archive/refs/tags/{tag}.tar.gz"
 archive_root = "neovim-{version}"
-sha256 = "a810c95332317bd0017e1ca07e376a8472c79075cbed00fa3737d190a8a0a45a"
+sha256 = "8629fdc5eb951daf89a76f68cad12f2f1e03fab0d539150ba3fe6d177d254b7f"
 
 [build]
 toolchain = "system"
