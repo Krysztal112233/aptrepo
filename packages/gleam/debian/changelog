@@ -1,3 +1,9 @@
+gleam (1.19.1-1) UNRELEASED; urgency=medium
+
+  * New upstream release.
+
+ -- Krysztal Huang <krysztal.huang@outlook.com>  Sun, 11 Oct 2026 19:15:50 +0800
+
 gleam (1.19.0-1) UNRELEASED; urgency=medium
 
   * New upstream release.
