@@ -1,4 +1,4 @@
-import { deepStrictEqual, ok, strictEqual, throws } from "node:assert/strict";
+import { deepStrictEqual, ok, throws } from "node:assert/strict";
 import { join } from "node:path";
 import { classify, parseTagRefs, stableTagPattern } from "./check-updates.ts";
 import { denoDir, makeSandbox } from "./test-harness.ts";

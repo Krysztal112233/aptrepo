@@ -1,7 +1,7 @@
 [package]
 name = "wezterm"
 version = "20240203-110809-5046fc22"
-debian_revision = "1"
+debian_revision = "2"
 
 [source]
 git = "https://github.com/wez/wezterm"

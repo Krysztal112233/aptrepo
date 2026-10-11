@@ -40,7 +40,8 @@ executable `packages/<name>/pre-vendor`: it runs on the host after extraction
 and before `cargo vendor`, with the toolchain's cargo as `$1` and the source
 tree as the working directory. The script's checksum is part of the vendored
 tarball identity, so edits invalidate the cache. (wezterm uses this to refresh
-its 2024 `time` lockfile entry, which no longer compiles on newer rustc.)
+its 2024 `time` lockfile entry and pin `glium` 0.32.1: 0.31's undefined behavior
+in OpenGL texture creation renders text as blocks with modern Rust.)
 
 Incremental builds retain the first `since` argument and accept architecture
 selection second. They consider both commits and working-tree changes:
