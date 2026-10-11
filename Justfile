@@ -8,6 +8,10 @@ check-config:
 check-required:
     ./scripts/check-required
 
+# Flag packages whose pinned tag is not the newest stable upstream tag, or is gone
+check-updates name="all":
+    ./scripts/check-updates.ts {{quote(name)}}
+
 fmt:
     deno fmt **/**.ts
 

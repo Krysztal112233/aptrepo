@@ -146,6 +146,13 @@ Deno.test("Justfile and all twelve package modules: default and explicit forward
   ok(setupAll.includes(`./scripts/build-targets.ts --setup-all 'riscv64'`));
   ok(setupAll.includes(`./scripts/build-targets.ts --suites 'riscv64'`));
   ok(setupAll.includes(`just setup-sbuild "$suite" 'riscv64'`));
+  for (const args of [[], ["all"], ["d2"]]) {
+    const expected = args[0] ?? "all";
+    ok(
+      (await command("just", ["--dry-run", "check-updates", ...args]))
+        .includes(`./scripts/check-updates.ts '${expected}'`),
+    );
+  }
   // Shell interpolation must not turn malformed input into commands.
   const malformed = await command("just", [
     "--dry-run",
@@ -154,6 +161,12 @@ Deno.test("Justfile and all twelve package modules: default and explicit forward
     "arm64; echo unsafe",
   ]);
   ok(malformed.includes("'arm64; echo unsafe'"));
+  const malformedUpdates = await command("just", [
+    "--dry-run",
+    "check-updates",
+    "d2; echo unsafe",
+  ]);
+  ok(malformedUpdates.includes("'d2; echo unsafe'"));
   for (
     const args of [["all", "amd64"], ["trixie", "armhf"], [
       "--build-all",

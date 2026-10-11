@@ -46,6 +46,8 @@ export interface PackageConfig {
   source: {
     git: string;
     tag: string;
+    /** Raw tag template (e.g. "v{version}"), before version interpolation. */
+    tagTemplate: string;
     archive: string;
     archiveRoot: string;
     sha256: string;
@@ -198,8 +200,9 @@ export async function loadPackageConfig(
     configPath,
   );
   const git = readUrl(sourceTable, "git", configPath);
+  const tagTemplate = readString(sourceTable, "tag", configPath);
   const tag = interpolate(
-    readString(sourceTable, "tag", configPath),
+    tagTemplate,
     { version },
     configPath,
   );
@@ -228,7 +231,7 @@ export async function loadPackageConfig(
     version,
     debianRevision,
     baseVersion: `${version}-${debianRevision}`,
-    source: { git, tag, archive, archiveRoot, sha256 },
+    source: { git, tag, tagTemplate, archive, archiveRoot, sha256 },
     build: { toolchain },
   };
 }

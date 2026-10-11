@@ -52,6 +52,18 @@ not need emulation. Selections outside the amd64 build matrix (for example
 `bookworm` + `riscv64`, or any foreign architecture) fail before toolchain
 setup.
 
+To check whether upstream published newer stable tags than the pinned ones:
+
+```sh
+just check-updates        # every package
+just check-updates d2     # one package
+```
+
+The recipe lists each `source.git` remote's tags with `git ls-remote`
+(version-sorted, no downloads) and reports packages whose pinned `source.tag`
+is not the newest stable match or no longer exists upstream. Updates are
+informational; missing tags and lookup failures exit non-zero.
+
 Build outputs are written to `build/<suite>/`, with `_<arch>.deb`,
 `_<arch>.changes`, and `_<arch>.buildinfo` names. The emulated-native foreign
 machinery (matching compiler packages, emulated target execution inside sbuild
