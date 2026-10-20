@@ -1,0 +1,26 @@
+Source: typst
+Section: text
+Priority: optional
+Maintainer: Krysztal Huang <krysztal.huang@outlook.com>
+Build-Depends:
+ {{RUST_PACKAGE_NAME}} (= {{RUST_PACKAGE_VERSION}}),
+ debhelper-compat (= 13),
+ libssl-dev,
+ pkgconf,
+Standards-Version: 4.7.2
+Homepage: {{SOURCE_GIT}}
+Rules-Requires-Root: no
+
+Package: typst
+Architecture: any
+Depends: ca-certificates, ${misc:Depends}, ${shlibs:Depends}
+Description: markup-based typesetting system
+ Typst is a markup-based typesetting system designed to be as powerful as
+ LaTeX while being much easier to learn and use. It provides built-in markup
+ for common formatting tasks, flexible functions for everything else, a
+ tightly integrated scripting system, math typesetting, bibliography
+ management, and fast compile times thanks to incremental compilation.
+ .
+ This package ships the typst command line compiler with man pages and
+ shell completions. The self-update feature is disabled; package upgrades
+ are managed by APT.

@@ -17,6 +17,7 @@ const names = [
   "gix",
   "gleam",
   "wezterm",
+  "typst",
 ];
 
 async function command(

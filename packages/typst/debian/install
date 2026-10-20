@@ -1,0 +1,5 @@
+target/release/typst usr/bin
+debian/generated/*.1 usr/share/man/man1
+debian/generated/typst.bash usr/share/bash-completion/completions
+debian/generated/typst.fish usr/share/fish/vendor_completions.d
+debian/generated/_typst usr/share/zsh/vendor-completions

@@ -192,7 +192,7 @@ Deno.test("check-updates: entrypoint classifies pinned tags end to end", async (
     ok(!all.success, all.output);
     ok(all.output.includes("d2"), all.output);
     ok(all.output.includes("lazygit"), all.output);
-    ok(all.output.includes("13 packages"), all.output);
+    ok(all.output.includes("14 packages"), all.output);
   } finally {
     await Deno.remove(root, { recursive: true });
   }

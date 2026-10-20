@@ -51,6 +51,7 @@ mod neovim   "packages/neovim/justfile"
 mod gix      "packages/gix/justfile"
 mod gleam    "packages/gleam/justfile"
 mod wezterm  "packages/wezterm/justfile"
+mod typst    "packages/typst/justfile"
 
 # ---- Aggregate ----
 
@@ -69,6 +70,7 @@ build-all arch="all":
     @just gix::build-all {{quote(arch)}}
     @just gleam::build-all {{quote(arch)}}
     @just wezterm::build-all {{quote(arch)}}
+    @just typst::build-all {{quote(arch)}}
 
 # ---- Incremental build ----
 
