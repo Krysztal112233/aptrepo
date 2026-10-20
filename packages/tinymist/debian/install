@@ -1,0 +1,4 @@
+target/release/tinymist usr/bin
+debian/generated/tinymist.bash usr/share/bash-completion/completions
+debian/generated/tinymist.fish usr/share/fish/vendor_completions.d
+debian/generated/_tinymist usr/share/zsh/vendor-completions

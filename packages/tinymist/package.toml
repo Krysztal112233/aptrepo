@@ -1,0 +1,18 @@
+[package]
+name = "tinymist"
+version = "0.15.10"
+debian_revision = "1"
+
+# NOTE (check-updates): tinymist tags odd PATCH numbers for nightly builds
+# (e.g. v0.15.11), which version-sort above even-patch stable releases, so
+# update candidates must be verified against
+# https://github.com/Myriad-Dreamin/tinymist/releases before bumping.
+[source]
+git = "https://github.com/Myriad-Dreamin/tinymist"
+tag = "v{version}"
+archive = "{git}/archive/refs/tags/{tag}.tar.gz"
+archive_root = "tinymist-{version}"
+sha256 = "c6ecb0b8a772148fc4864c87b46f9d9d07ad6e6e19ab2ac0f84f2a873c775f1b"
+
+[build]
+toolchain = "rust"

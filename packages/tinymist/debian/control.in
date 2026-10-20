@@ -1,0 +1,23 @@
+Source: tinymist
+Section: text
+Priority: optional
+Maintainer: Krysztal Huang <krysztal.huang@outlook.com>
+Build-Depends:
+ {{RUST_PACKAGE_NAME}} (= {{RUST_PACKAGE_VERSION}}),
+ debhelper-compat (= 13),
+Standards-Version: 4.7.2
+Homepage: {{SOURCE_GIT}}
+Rules-Requires-Root: no
+
+Package: tinymist
+Architecture: any
+Depends: ca-certificates, ${misc:Depends}, ${shlibs:Depends}
+Description: language server for the Typst typesetting system
+ Tinymist is a language server (LSP/DAP) for Typst. It provides code
+ completion, jump to definition, diagnostics, linting, live document preview,
+ and export to PDF/SVG/PNG/Markdown for Typst documents in any LSP-capable
+ editor.
+ .
+ The CLI also offers a typst-compatible compile subcommand and a preview
+ server. Tinymist embeds its own (forked) Typst compiler, so installing the
+ typst package is not required.

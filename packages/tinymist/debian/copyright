@@ -1,0 +1,187 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: tinymist
+Source: https://github.com/Myriad-Dreamin/tinymist
+
+Files: *
+Copyright: Myriad-Dreamin and contributors
+License: Apache-2.0
+
+# Tinymist vendors a forked Typst compiler (vendor/typst-*, from
+# github.com/Myriad-Dreamin/typst, tag tinymist/v0.15.1) and other git-pinned
+# forks (reflexo/typst.ts, typstfmt, docx-rs, xilem/masonry). These remain
+# under their own licenses (predominantly Apache-2.0 and MIT); for the Typst
+# portions the same third-party components documented in the typst source
+# package apply (MIT-licensed excerpts, LPPL translations, BSD-3 Skia
+# blending code, Apache-2.0-with-LLVM-exception powi).
+
+Files: vendor/typst-*
+ vendor/typst-ansi-hl-*
+Copyright: The Typst Project Developers
+License: Apache-2.0
+Comment: typst-ansi-hl additionally embeds Sublime Text syntax definitions
+ and themes via syntect/two-face, which carry their own permissive licenses.
+
+# The preview frontend and localization data ship pre-built inside the
+# crates.io tinymist-assets crate (declared Apache-2.0). The minified
+# JavaScript bundle (built from typst-preview) may contain third-party JS
+# components under their own licenses.
+
+Files: vendor/tinymist-assets-*
+Copyright: Myriad-Dreamin and contributors
+License: Apache-2.0
+
+# Fonts embedded into the binary via the vendored typst-assets crate
+# (default feature "embed-fonts"):
+
+Files: vendor/typst-assets-*/files/fonts/LibertinusSerif-*.otf
+Copyright: 2012-2024 The Libertinus Project Authors
+License: OFL-1.1
+ Reserved Font Names: "Linux Libertine", "Biolinum", "STIX Fonts".
+
+Files: vendor/typst-assets-*/files/fonts/NewCM*.otf
+Copyright: GUST e-foundry and TeX users groups
+License: GUST-Font-License-1.0
+Comment: All NewCM*.otf except NewCM10-Regular.otf. The GUST Font License
+ is the LaTeX Project Public License 1.3c or later, plus a request (not a
+ legal requirement) to rename derived works.
+
+Files: vendor/typst-assets-*/files/fonts/NewCM10-Regular.otf
+Copyright: GUST e-foundry and TeX users groups
+License: GPL-3.0+ with Font-exception-2.0 and an additional distribution
+ exception; see the typst-assets NOTICE for the full text.
+
+Files: vendor/typst-assets-*/files/fonts/DejaVu*.ttf
+Copyright:
+ 2003 Bitstream, Inc.
+ 2006 Tavmjong Bah (Arev glyphs)
+ American Mathematical Society (Euler Fraktur glyphs in TeX Gyre DJV Math)
+License: Bitstream-Vera
+Comment: DejaVu changes to the Bitstream Vera fonts are in the public
+ domain.
+
+Files: vendor/typst-assets-*/files/fonts/Foxit*.pfb
+Copyright: 2014 PDFium Authors
+License: BSD-3-Clause
+
+Files: vendor/typst-assets-*/files/icc/*-v4.icc
+License: CC0-1.0
+
+Files: debian/*
+Copyright: 2026 Krysztal Huang
+License: Apache-2.0
+
+License: Apache-2.0
+ On Debian systems, the complete text of the Apache License, Version 2.0 can
+ be found in "/usr/share/common-licenses/Apache-2.0".
+
+License: OFL-1.1
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of the Font Software, to use, study, copy, merge, embed, modify,
+ redistribute, and sell modified and unmodified copies of the Font Software,
+ subject to the following conditions:
+ .
+ 1) Neither the Font Software nor any of its individual components, in
+    Original or Modified Versions, may be sold by itself.
+ .
+ 2) Original or Modified Versions of the Font Software may be bundled,
+    redistributed and/or sold with any software, provided that each copy
+    contains the above copyright notice and this license.
+ .
+ 3) No Modified Version of the Font Software may use the Reserved Font
+    Name(s) unless explicit written permission is granted by the
+    corresponding Copyright Holder.
+ .
+ 4) The name(s) of the Copyright Holder(s) or the Author(s) of the Font
+    Software shall not be used to promote, endorse or advertise any Modified
+    Version, except to acknowledge the contribution(s) of the Copyright
+    Holder(s) or with their explicit written permission.
+ .
+ 5) The Font Software, modified or unmodified, in part or in whole, must be
+    distributed entirely under this license, and must not be distributed
+    under any other license. The requirement for fonts to remain under this
+    license does not apply to any document created using the Font Software.
+ .
+ The full text of the SIL Open Font License 1.1 is shipped in the upstream
+ typst-assets NOTICE and at https://openfontlicense.org/
+
+License: GUST-Font-License-1.0
+ This work may be distributed and/or modified under the conditions of the
+ LaTeX Project Public License, either version 1.3c or (at your option) any
+ later version. The latest version of this license is in
+ https://www.latex-project.org/lppl.txt
+ .
+ It is requested, but not legally required, that derived works be
+ distributed only after changing the names of the fonts comprising this
+ work.
+
+License: GPL-3.0+ with Font-exception-2.0
+ On Debian systems, the complete text of the GNU General Public License
+ version 3 can be found in "/usr/share/common-licenses/GPL-3".
+ .
+ As a special exception, if you create a document which uses this font, and
+ embed this font or unaltered portions of this font into the document, this
+ font does not by itself cause the resulting document to be covered by the
+ GNU General Public License. This exception does not however invalidate any
+ other reasons why the document might be covered by the GNU General Public
+ License. If you modify this font, you may extend this exception to your
+ version of the font, but you are not obligated to do so. If you do not wish
+ to do so, delete this exception statement from your version.
+
+License: Bitstream-Vera
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of the fonts accompanying this license ("Fonts") and associated
+ documentation files (the "Font Software"), to reproduce and distribute the
+ Font Software, including without limitation the rights to use, copy, merge,
+ publish, distribute, and/or sell copies of the Font Software, and to permit
+ persons to whom the Font Software is furnished to do so, subject to the
+ following conditions:
+ .
+ The above copyright and trademark notices and this permission notice shall
+ be included in all copies of one or more of the Font Software typefaces.
+ .
+ The Font Software may be modified, altered, or added to, and in particular
+ the designs of glyphs or characters in the Fonts may be modified and
+ additional glyphs or characters may be added to the Fonts, only if the
+ fonts are renamed to names not containing either the words "Bitstream" or
+ the word "Vera".
+ .
+ THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF COPYRIGHT, PATENT,
+ TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL BITSTREAM OR THE GNOME
+ FOUNDATION BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE FONT SOFTWARE.
+
+License: BSD-3-Clause
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+ .
+   * Redistributions of source code must retain the above copyright notice,
+     this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above copyright
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
+   * Neither the name of the copyright holder nor the names of its
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ POSSIBILITY OF SUCH DAMAGE.
+
+License: CC0-1.0
+ To the extent possible under law, the author(s) have dedicated all copyright
+ and related and neighboring rights to this software to the public domain
+ worldwide. This software is distributed without any warranty.
+ .
+ The full text of the CC0 1.0 Universal license is shipped in the upstream
+ typst-assets NOTICE and at https://creativecommons.org/publicdomain/zero/1.0/legalcode

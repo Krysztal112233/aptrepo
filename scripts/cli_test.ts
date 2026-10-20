@@ -18,6 +18,7 @@ const names = [
   "gleam",
   "wezterm",
   "typst",
+  "tinymist",
 ];
 
 async function command(
