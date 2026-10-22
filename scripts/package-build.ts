@@ -293,14 +293,19 @@ function vendoredOrigPath(
   );
 }
 
-function createSystemAdapter(
+async function createSystemAdapter(
   environment: BuildEnvironment,
-): BuildAdapter {
+): Promise<BuildAdapter> {
+  const preVendor = preVendorPath(environment);
+  const hasPreVendor = await exists(preVendor);
   const vendoredOrig = vendoredOrigPath(
     environment,
     [
       environment.packageConfig.source.sha256.slice(0, 12),
       systemVendoringRevision,
+      // Same contract as the Rust adapter: a package-local pre-vendor hook
+      // changes the vendored tree, so its checksum guards the cache.
+      ...(hasPreVendor ? [(await checksum(preVendor)).slice(0, 12)] : []),
     ].join("-"),
   );
 
@@ -315,7 +320,14 @@ function createSystemAdapter(
       return prepareVendoredSource(
         sourceEnvironment,
         vendoredOrig,
-        prefetchCmakeDeps,
+        async (source) => {
+          await prefetchCmakeDeps(source);
+          if (hasPreVendor) {
+            // Unlike the Rust hook there is no toolchain binary to hand
+            // over; cwd is the source tree.
+            await source.runtime.run(preVendor, [], source.sourceDir);
+          }
+        },
       );
     },
   };
