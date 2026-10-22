@@ -1,7 +1,7 @@
 [package]
 name = "duckdb"
 version = "2.0.0"
-debian_revision = "1"
+debian_revision = "2"
 
 [source]
 git = "https://github.com/duckdb/duckdb"

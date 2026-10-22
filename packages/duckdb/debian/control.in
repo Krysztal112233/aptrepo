@@ -7,6 +7,10 @@ Build-Depends:
  debhelper-compat (= 13),
  g++,
  git,
+ libcurl4-openssl-dev,
+ libmariadb-dev,
+ libpq-dev,
+ libssl-dev,
  ninja-build,
  python3,
 Standards-Version: 4.7.2
@@ -24,6 +28,6 @@ Description: fast in-process analytical database engine (CLI)
  .
  This package ships the duckdb command line client, built following the
  official Linux release parameters: bundled extension set (parquet, json,
- icu, autocomplete statically linked; httpfs and friends autoloaded over
- HTTPS on first use), jemalloc allocator, and the official x86-64-v3
- optimization profile (requires an AVX2-capable CPU).
+ icu, autocomplete) plus statically linked httpfs and sqlite/postgres/mysql
+ scanner extensions (usable offline), jemalloc allocator, and the official
+ x86-64-v3 optimization profile (requires an AVX2-capable CPU).

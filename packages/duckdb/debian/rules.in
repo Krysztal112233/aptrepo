@@ -2,12 +2,20 @@
 
 # Follows the official linux-release build parameters (compatibility variant:
 # GCC from the chroot, no LTO). The bundled extension config statically links
-# exactly what the officially published CLI binary contains (core_functions,
-# parquet, json, icu, autocomplete); httpfs/fts/inet stay autoloadable over
-# HTTPS at runtime, same as upstream's binaries. DUCKDB_VERSION/COMMIT stamp
-# the build because the release tarball carries no .git metadata.
+# what the officially published CLI binary contains (core_functions, parquet,
+# json, icu, autocomplete); on top of that we statically link httpfs and the
+# sqlite/postgres/mysql scanners, so they work offline; the remaining catalog
+# stays autoloadable over HTTPS at runtime, same as upstream's binaries.
+# ../pre-vendor pre-populates the extension/external/<name> clones that the
+# v2 build flow would otherwise sync from the network inside the offline
+# chroot; DUCKDB_SKIP_APPLYING_PATCHES tells that sync to leave the trees
+# (with our patches/ applied) untouched. DUCKDB_VERSION/COMMIT stamp the
+# build because the release tarball carries no .git metadata.
 export GEN = ninja
 export EXTENSION_CONFIGS = $(CURDIR)/.github/config/bundled_extensions.cmake
+export BUILD_EXTENSIONS = httpfs;postgres_scanner;mysql_scanner;sqlite_scanner
+export STATICALLY_LINK_EXTENSIONS = core_functions;parquet;json;icu;autocomplete;httpfs;postgres_scanner;mysql_scanner;sqlite_scanner
+export DUCKDB_SKIP_APPLYING_PATCHES = 1
 export DUCKDB_CAPABILITIES = httplib loadable_extensions
 export BUILD_JEMALLOC = 1
 export FORCE_WARN_UNUSED = 1

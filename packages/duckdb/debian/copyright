@@ -37,6 +37,16 @@ Comment: DuckDB vendors its dependencies (brotli, catch, concurrentqueue,
  zstd) under permissive licenses; each subdirectory ships its own license
  file. jemalloc is statically linked into the binary (ENABLE_JEMALLOC=1).
 
+Files: extension/external/*
+Copyright: 2018-2026 Stichting DuckDB Foundation
+License: MIT
+Comment: The pre-vendor script vendors the out-of-tree DuckDB extensions
+ that are statically linked into the CLI (duckdb-httpfs, duckdb-postgres,
+ duckdb-mysql, duckdb-sqlite, all MIT-licensed by the DuckDB Foundation),
+ pinned to the commits of duckdb v2.0.0's own release configs. The sqlite
+ scanner embeds sqlite3, which is in the public domain. Local adaptations
+ for the static-link/system-library build are applied by pre-vendor.
+
 Files: debian/*
 Copyright: 2026 Krysztal Huang
 License: MIT
