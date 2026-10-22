@@ -1,0 +1,29 @@
+Source: duckdb
+Section: database
+Priority: optional
+Maintainer: Krysztal Huang <krysztal.huang@outlook.com>
+Build-Depends:
+ cmake,
+ debhelper-compat (= 13),
+ g++,
+ git,
+ ninja-build,
+ python3,
+Standards-Version: 4.7.2
+Homepage: {{SOURCE_GIT}}
+Rules-Requires-Root: no
+
+Package: duckdb
+Architecture: any
+Depends: ca-certificates, ${misc:Depends}, ${shlibs:Depends}
+Description: fast in-process analytical database engine (CLI)
+ DuckDB is a high-performance analytical database system. It is designed to
+ be fast, reliable, portable, and easy to use, and provides a rich SQL
+ dialect with support for complex queries, window functions, and direct
+ querying of Parquet, CSV, and JSON files.
+ .
+ This package ships the duckdb command line client, built following the
+ official Linux release parameters: bundled extension set (parquet, json,
+ icu, autocomplete statically linked; httpfs and friends autoloaded over
+ HTTPS on first use), jemalloc allocator, and the official x86-64-v3
+ optimization profile (requires an AVX2-capable CPU).

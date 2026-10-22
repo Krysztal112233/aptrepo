@@ -1,0 +1,14 @@
+[package]
+name = "duckdb"
+version = "2.0.0"
+debian_revision = "1"
+
+[source]
+git = "https://github.com/duckdb/duckdb"
+tag = "v{version}"
+archive = "{git}/archive/refs/tags/{tag}.tar.gz"
+archive_root = "duckdb-{version}"
+sha256 = "7e89053255046bfb26afbd7f524a2fb84df7dbef496aa911ea35e4a1182fdc00"
+
+[build]
+toolchain = "system"

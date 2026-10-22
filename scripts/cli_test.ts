@@ -19,6 +19,7 @@ const names = [
   "wezterm",
   "typst",
   "tinymist",
+  "duckdb",
 ];
 
 async function command(
@@ -84,7 +85,7 @@ Deno.test("Justfile and every package module: default and explicit forwarding", 
         ]);
         const preflight =
           `./scripts/build-targets.ts --build '${suite}' '${arch}'`;
-        const setup = name === "neovim"
+        const setup = ["neovim", "duckdb"].includes(name)
           ? null
           : `just setup-${
             ["d2", "lazygit"].includes(name) ? "go" : "rust"

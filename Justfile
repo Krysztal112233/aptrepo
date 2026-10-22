@@ -53,6 +53,7 @@ mod gleam    "packages/gleam/justfile"
 mod wezterm  "packages/wezterm/justfile"
 mod typst    "packages/typst/justfile"
 mod tinymist "packages/tinymist/justfile"
+mod duckdb   "packages/duckdb/justfile"
 
 # ---- Aggregate ----
 
@@ -73,6 +74,7 @@ build-all arch="all":
     @just wezterm::build-all {{quote(arch)}}
     @just typst::build-all {{quote(arch)}}
     @just tinymist::build-all {{quote(arch)}}
+    @just duckdb::build-all {{quote(arch)}}
 
 # ---- Incremental build ----
 

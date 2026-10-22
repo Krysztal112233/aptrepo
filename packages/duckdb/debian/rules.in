@@ -1,0 +1,46 @@
+#!/usr/bin/make -f
+
+# Follows the official linux-release build parameters (compatibility variant:
+# GCC from the chroot, no LTO). The bundled extension config statically links
+# exactly what the officially published CLI binary contains (core_functions,
+# parquet, json, icu, autocomplete); httpfs/fts/inet stay autoloadable over
+# HTTPS at runtime, same as upstream's binaries. DUCKDB_VERSION/COMMIT stamp
+# the build because the release tarball carries no .git metadata.
+export GEN = ninja
+export EXTENSION_CONFIGS = $(CURDIR)/.github/config/bundled_extensions.cmake
+export DUCKDB_CAPABILITIES = httplib loadable_extensions
+export BUILD_JEMALLOC = 1
+export FORCE_WARN_UNUSED = 1
+export DUCKDB_VERSION = v2.0.0
+export DUCKDB_COMMIT = d54cbbe3df17e8e5ce68312f483b4155836112aa
+# The release target also builds the unittest tree by default; skip it (we
+# never run it, like neovim) - with dpkg-buildflags' -g it is the difference
+# between fitting in the chroot tmpfs and not.
+export EXTRA_CMAKE_VARIABLES = -DBUILD_UNITTESTS=FALSE
+# dh_strip discards debug info anyway (--no-automatic-dbgsym); on a tree this
+# size -g balloons intermediates past the chroot tmpfs, so strip the flag.
+export DEB_CXXFLAGS_MAINT_STRIP = -g
+export DEB_CFLAGS_MAINT_STRIP = -g
+
+%:
+	dh $@
+
+# Configure+build happen through the upstream Makefile (build/release).
+override_dh_auto_configure:
+
+override_dh_auto_build:
+	make release
+
+# Upstream's test suites expect a full CI environment; skip them, matching the
+# autopkgtest/piuparts skips in scripts/package-build.ts.
+override_dh_auto_test:
+
+# Install only the CLI binary (via debian/install); skip upstream's install
+# target, which would also install the library and headers.
+override_dh_auto_install:
+
+override_dh_auto_clean:
+	rm -rf build
+
+override_dh_strip:
+	dh_strip --no-automatic-dbgsym
