@@ -1,7 +1,12 @@
 #!/usr/bin/make -f
 
-# Follows the official linux-release build parameters (compatibility variant:
-# GCC from the chroot, no LTO). The bundled extension config statically links
+# Follows the official linux-release build parameters, but compiles with
+# clang from the chroot (matching upstream's CI: "Other CI job use Clang").
+# duckdb::unique_ptr subclasses std::unique_ptr and relies on its inherited
+# converting move constructor; GCC <= 12 (bookworm) rejects the
+# `return result;` derived-to-base conversion in
+# extension/external/httpfs/src/http/httpfs.cpp, while clang accepts it on
+# every suite. The bundled extension config statically links
 # what the officially published CLI binary contains (core_functions, parquet,
 # json, icu, autocomplete); on top of that we statically link httpfs and the
 # sqlite/postgres/mysql scanners, so they work offline; the remaining catalog
@@ -12,6 +17,11 @@
 # (with our patches/ applied) untouched. DUCKDB_VERSION/COMMIT stamp the
 # build because the release tarball carries no .git metadata.
 export GEN = ninja
+# clang everywhere: trixie/forky's GCC 14 also accepts the code, and keeping
+# one compiler across suites matches upstream CI (GCC <= 12 chokes on the
+# unique_ptr conversion; see above).
+export CC = clang
+export CXX = clang++
 export EXTENSION_CONFIGS = $(CURDIR)/.github/config/bundled_extensions.cmake
 export BUILD_EXTENSIONS = httpfs;postgres_scanner;mysql_scanner;sqlite_scanner
 export STATICALLY_LINK_EXTENSIONS = core_functions;parquet;json;icu;autocomplete;httpfs;postgres_scanner;mysql_scanner;sqlite_scanner

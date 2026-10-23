@@ -3,9 +3,9 @@ Section: database
 Priority: optional
 Maintainer: Krysztal Huang <krysztal.huang@outlook.com>
 Build-Depends:
+ clang,
  cmake,
  debhelper-compat (= 13),
- g++,
  git,
  libcurl4-openssl-dev,
  libmariadb-dev,
