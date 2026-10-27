@@ -1,7 +1,7 @@
 #!/bin/sh
 # Host-side source preparation ($1 = toolchain cargo, cwd = source tree).
 # GitHub commit archives omit submodule contents. These gitlinks and hashes
-# belong to source.commit e2a98e1b8af156988ad0ac778658ac27b60a55fb; review
+# belong to source.commit e68a8ec27727fbbda15e07f0a0737cd5e16481f6; review
 # and refresh all four when advancing the snapshot.
 # Keep the upstream Cargo.lock unchanged: the snapshot already includes the
 # time and glium fixes that required dependency overrides in the 2024 release.

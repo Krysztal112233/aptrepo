@@ -69,7 +69,7 @@ read-only CLI/file-acknowledgement probe:
 
 ```sh
 scratch=$(mktemp -d /var/tmp/wezterm-smoke.XXXXXX)
-dpkg-deb -x build/forky/wezterm_20261010-073911-e2a98e1b-1~deb14u1_amd64.deb "$scratch/package"
+dpkg-deb -x build/forky/wezterm_20261026-072628-e68a8ec2-1~deb14u1_amd64.deb "$scratch/package"
 uv run --no-project --python /usr/bin/python3 packages/wezterm/test-scroll-margins.py \
   "$scratch/package/usr/bin/wezterm" --front-end OpenGL \
   --artifacts "$scratch/opengl"
@@ -89,7 +89,7 @@ Wayland/desktop checks before publishing.
 
 ## Current snapshot
 
-`20261010-073911-e2a98e1b` already contains upstream PR #5871, which bounds the
+`20261026-072628-e68a8ec2` already contains upstream PR #5871, which bounds the
 DECSLRM left margin using the column count rather than the row count. It also
 uses glium 0.35.0 and time 0.3.55; the old 2024 dependency overrides are removed.
 

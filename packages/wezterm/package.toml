@@ -1,14 +1,14 @@
 [package]
 name = "wezterm"
-version = "20261010-073911-e2a98e1b"
+version = "20261026-072628-e68a8ec2"
 debian_revision = "1"
 
 [source]
 git = "https://github.com/wezterm/wezterm"
-commit = "e2a98e1b8af156988ad0ac778658ac27b60a55fb"
+commit = "e68a8ec27727fbbda15e07f0a0737cd5e16481f6"
 archive = "{git}/archive/{commit}.tar.gz"
 archive_root = "wezterm-{commit}"
-sha256 = "3939caa272fc97817ed72ef02e4701744ea96746d73500c00eedda31284f06dc"
+sha256 = "bb9e39ed576180832330e72b5e5e89990dddb58092ed32a74e1391838cbbf6cc"
 
 # Discovery only: builds always use the immutable source.commit above.
 [updates]

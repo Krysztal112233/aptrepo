@@ -1,3 +1,9 @@
+wezterm (20261026-072628-e68a8ec2-1) UNRELEASED; urgency=medium
+
+  * New upstream snapshot.
+
+ -- Krysztal Huang <krysztal.huang@outlook.com>  Tue, 27 Oct 2026 11:39:14 +0800
+
 wezterm (20261010-073911-e2a98e1b-1) UNRELEASED; urgency=medium
 
   * Package a fixed upstream commit snapshot and track main for candidate updates.
