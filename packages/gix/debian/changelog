@@ -1,3 +1,9 @@
+gix (0.90.0-1) UNRELEASED; urgency=medium
+
+  * New upstream release.
+
+ -- Krysztal Huang <krysztal.huang@outlook.com>  Tue, 27 Oct 2026 11:28:41 +0800
+
 gix (0.89.0-1) UNRELEASED; urgency=medium
 
   * New upstream release, now tracking the gix-v* tag series.
